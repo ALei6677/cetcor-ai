@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const result = await client.generateImageWithRetry({
       prompt: validated.prompt,
       size: validated.size || '2k',
-      sequential_image_generation: 'auto',
+      sequential_image_generation: 'on',  // 强制开启序列化生成
       sequential_image_generation_options: {
         max_images: validated.maxImages || 3,
       },
