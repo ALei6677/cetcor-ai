@@ -62,7 +62,7 @@ export function GenerationForm({ onGenerateSuccess, onGenerateError }: IGenerati
     resolver: zodResolver(formSchema),
     defaultValues: {
       prompt: '',
-      size: '2K',
+      size: '2k',
       maxImages: 3,
       watermark: true,
     },

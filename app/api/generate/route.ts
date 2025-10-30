@@ -8,7 +8,7 @@ import type { IApiResponse } from '@/types/seedream.types';
  */
 const GenerateRequestSchema = z.object({
   prompt: z.string().min(1, '提示词不能为空').max(1000, '提示词不能超过1000个字符'),
-  size: z.enum(['2K', '1:1', '16:9', '9:16', '4:3', '3:4']).optional(),
+  size: z.enum(['1k', '2k', '4k', '1:1', '16:9', '9:16', '4:3', '3:4']).optional(),
   maxImages: z.number().min(1).max(6).optional(),
   watermark: z.boolean().optional(),
   image: z.array(z.string().url()).optional(),
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // 5. 调用API生成图片
     const result = await client.generateImageWithRetry({
       prompt: validated.prompt,
-      size: validated.size || '2K',
+      size: validated.size || '2k',
       sequential_image_generation: 'auto',
       sequential_image_generation_options: {
         max_images: validated.maxImages || 3,
