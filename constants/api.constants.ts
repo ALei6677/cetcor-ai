@@ -15,11 +15,11 @@ export const SIZE_OPTIONS = [
   { value: '2k', label: '2K', description: '高清 2048px' },
   { value: '1k', label: '1K', description: '标清 1024px' },
   { value: '4k', label: '4K', description: '超高清 4096px' },
-  { value: '1:1', label: '1:1', description: '方形 1024x1024' },
-  { value: '16:9', label: '16:9', description: '横屏 1920x1080' },
-  { value: '9:16', label: '9:16', description: '竖屏 1080x1920' },
-  { value: '4:3', label: '4:3', description: '标准 1600x1200' },
-  { value: '3:4', label: '3:4', description: '竖版 1200x1600' },
+  { value: '1024x1024', label: '1:1', description: '方形 1024x1024' },
+  { value: '1920x1080', label: '16:9', description: '横屏 1920x1080' },
+  { value: '1080x1920', label: '9:16', description: '竖屏 1080x1920' },
+  { value: '1600x1200', label: '4:3', description: '标准 1600x1200' },
+  { value: '1200x1600', label: '3:4', description: '竖版 1200x1600' },
 ] as const;
 
 /**

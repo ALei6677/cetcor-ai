@@ -79,6 +79,14 @@ export function GenerationForm({ onGenerateSuccess, onGenerateError }: IGenerati
     setIsGenerating(true);
 
     try {
+      // Debug: 打印表单数据
+      console.log('表单提交的数据:', {
+        prompt: data.prompt,
+        size: data.size,
+        maxImages: data.maxImages,
+        watermark: data.watermark,
+      });
+      
       // 调用API生成图片
       const response = await fetch('/api/generate', {
         method: 'POST',
