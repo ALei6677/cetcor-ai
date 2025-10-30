@@ -1,65 +1,154 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { HeroCarousel } from '@/components/hero-carousel';
+import { GenerationForm } from '@/components/generation-form';
+import { ImageGallery } from '@/components/image-gallery';
+import { HistoryDialog } from '@/components/history-dialog';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { useTranslation } from '@/stores/language-store';
+import type { ISeedreamResponse } from '@/types/seedream.types';
+import { History, Sparkles } from 'lucide-react';
+
+/**
+ * 首页组件
+ * Seedream AI图片生成平台的主页面
+ */
+export default function HomePage() {
+  const t = useTranslation();
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  const [currentPrompt, setCurrentPrompt] = useState<string>('');
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  /**
+   * 处理生成成功
+   * @param result - API响应结果
+   */
+  const handleGenerateSuccess = (result: ISeedreamResponse) => {
+    const images = result.data
+      .map((img) => img.url)
+      .filter((url): url is string => !!url);
+    
+    setGeneratedImages(images);
+    setErrorMessage(null);
+  };
+
+  /**
+   * 处理生成失败
+   * @param error - 错误信息
+   */
+  const handleGenerateError = (error: string) => {
+    setErrorMessage(error);
+    // 3秒后自动清除错误信息
+    setTimeout(() => setErrorMessage(null), 3000);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      {/* 顶部导航栏 */}
+      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-40">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              火山引擎
+            </span>
+            <span className="text-sm text-muted-foreground">|</span>
+            <span className="text-sm text-muted-foreground">火山方舟</span>
+          </div>
+
+          {/* 右侧操作 */}
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setHistoryOpen(true)}
+            >
+              <History className="mr-2 h-4 w-4" />
+              {t.nav.history}
+            </Button>
+            <Button variant="outline" size="sm">
+              {t.nav.apiAccess}
+            </Button>
+            <Button size="sm">
+              {t.nav.console}
+            </Button>
+            <Button variant="default" size="sm">
+              {t.nav.goToHomepage}
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* 主内容区 */}
+      <main className="container mx-auto px-4 py-8 space-y-12">
+        {/* 标题区 */}
+        <div className="text-center space-y-4">
+          <h1 className="text-5xl md:text-6xl font-bold">
+            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Doubao Seedream
+            </span>
+            {' '}
+            <span className="inline-block bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">
+              {t.hero.version}
+            </span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-xl text-muted-foreground">
+            {t.hero.subtitle}
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* 轮播展示区 */}
+        <section>
+          <HeroCarousel />
+        </section>
+
+        {/* 自动组图模式说明 */}
+        <div className="max-w-3xl mx-auto text-center space-y-2">
+          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border rounded-full px-4 py-2">
+            <span className="text-sm font-medium">{t.form.modeLabel}</span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {t.form.modeDescription}
+          </p>
         </div>
+
+        {/* 生成表单 */}
+        <section className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8">
+          <GenerationForm
+            onGenerateSuccess={handleGenerateSuccess}
+            onGenerateError={handleGenerateError}
+          />
+          
+          {/* 错误提示 */}
+          {errorMessage && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+              {errorMessage}
+            </div>
+          )}
+        </section>
+
+        {/* 生成结果展示 */}
+        {generatedImages.length > 0 && (
+          <section className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8">
+            <ImageGallery images={generatedImages} prompt={currentPrompt} />
+          </section>
+        )}
+
+        {/* 底部说明 */}
+        <footer className="text-center text-xs text-muted-foreground max-w-3xl mx-auto">
+          {t.footer.disclaimer}
+        </footer>
       </main>
+
+      {/* 历史记录弹窗 */}
+      <HistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} />
     </div>
   );
 }

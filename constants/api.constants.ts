@@ -1,0 +1,47 @@
+/**
+ * API端点常量
+ */
+export const API_ENDPOINT = process.env.SEEDREAM_API_ENDPOINT || 'https://ark.cn-beijing.volces.com/api/v3/images/generations';
+
+/**
+ * API模型名称
+ */
+export const API_MODEL = process.env.SEEDREAM_MODEL || 'doubao-seedream-4-0-250828';
+
+/**
+ * 图片尺寸选项
+ */
+export const SIZE_OPTIONS = [
+  { value: '2K', label: '2K', description: '高清 2048px' },
+  { value: '1:1', label: '1:1', description: '方形 1024x1024' },
+  { value: '16:9', label: '16:9', description: '横屏 1920x1080' },
+  { value: '9:16', label: '9:16', description: '竖屏 1080x1920' },
+  { value: '4:3', label: '4:3', description: '标准 1600x1200' },
+  { value: '3:4', label: '3:4', description: '竖版 1200x1600' },
+] as const;
+
+/**
+ * 最大生成图片数量选项
+ */
+export const MAX_IMAGES_OPTIONS = [1, 2, 3, 4, 5, 6] as const;
+
+/**
+ * 默认生成参数
+ */
+export const DEFAULT_GENERATION_PARAMS = {
+  size: '2K',
+  maxImages: 3,
+  watermark: true,
+  sequential_image_generation: 'auto' as const,
+  response_format: 'url' as const,
+  stream: false,
+};
+
+/**
+ * 本地存储键名
+ */
+export const STORAGE_KEYS = {
+  HISTORY: 'seedream_history',
+  LANGUAGE: 'seedream_language',
+} as const;
+
