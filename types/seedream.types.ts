@@ -15,8 +15,8 @@ export interface ISeedreamRequest {
   };
   /** 响应格式：url或b64_json */
   response_format?: 'url' | 'b64_json';
-  /** 图片尺寸 */
-  size?: '2K' | '1:1' | '16:9' | '9:16' | '4:3' | '3:4';
+  /** 图片尺寸（支持格式：'1k', '2k', '4k' 或像素格式 '1024x1024' 等） */
+  size?: string;
   /** 是否使用流式响应 */
   stream?: boolean;
   /** 是否添加水印 */
