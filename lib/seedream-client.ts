@@ -35,8 +35,10 @@ export class SeedreamClient {
         ...request,
       };
       
-      // Debug: 打印发送给Seedream API的完整请求
-      console.log('🚀 发送给Seedream API的请求体:', JSON.stringify(requestBody, null, 2));
+      // Debug: 仅在开发环境打印请求
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🚀 发送给Seedream API的请求体:', JSON.stringify(requestBody, null, 2));
+      }
       
       const response = await fetch(this.endpoint, {
         method: 'POST',
@@ -59,12 +61,14 @@ export class SeedreamClient {
       // 解析响应数据
       const data: ISeedreamResponse = await response.json();
       
-      // Debug: 打印API响应
-      console.log('✅ Seedream API响应:', {
-        返回图片数量: data.data?.length || 0,
-        请求ID: data.id,
-        完整响应: JSON.stringify(data, null, 2)
-      });
+      // Debug: 仅在开发环境打印响应
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Seedream API响应:', {
+          返回图片数量: data.data?.length || 0,
+          请求ID: data.id,
+          完整响应: JSON.stringify(data, null, 2)
+        });
+      }
       
       // 验证响应数据结构
       if (!data.data || !Array.isArray(data.data)) {

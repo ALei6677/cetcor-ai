@@ -9,11 +9,11 @@
 - 📜 **历史记录** - 本地存储生成历史（无需数据库）
 - 🌐 **多语言支持** - 中文/英文切换
 - 📱 **响应式设计** - 完美适配桌面端和移动端
-- ⚡ **快速部署** - 基于 Next.js 14，支持 Vercel 一键部署
+- ⚡ **快速部署** - 基于 Next.js 16，支持 Vercel 一键部署
 
 ## 🛠️ 技术栈
 
-- **前端框架**: Next.js 14 (App Router)
+- **前端框架**: Next.js 16 (App Router)
 - **开发语言**: TypeScript (严格模式)
 - **样式方案**: Tailwind CSS + shadcn/ui
 - **状态管理**: Zustand

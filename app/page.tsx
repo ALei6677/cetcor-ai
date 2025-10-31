@@ -16,22 +16,27 @@ import { History, Sparkles } from 'lucide-react';
  * Seedream AI图片生成平台的主页面
  */
 export default function HomePage() {
-  const t = useTranslation();
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState<string>('');
   const [historyOpen, setHistoryOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
+  const t = useTranslation();
+  
   /**
    * 处理生成成功
-   * @param result - API响应结果
+   * @param result - API响应结果，包含生成的图片数据和提示词信息
+   * @param prompt - 生成图片时使用的提示词
    */
-  const handleGenerateSuccess = (result: ISeedreamResponse) => {
+  const handleGenerateSuccess = (result: ISeedreamResponse, prompt?: string) => {
     const images = result.data
       .map((img) => img.url)
       .filter((url): url is string => !!url);
     
     setGeneratedImages(images);
+    // 更新当前提示词（如果提供了的话）
+    if (prompt) {
+      setCurrentPrompt(prompt);
+    }
     setErrorMessage(null);
   };
 
@@ -41,14 +46,14 @@ export default function HomePage() {
    */
   const handleGenerateError = (error: string) => {
     setErrorMessage(error);
-    // 3秒后自动清除错误信息
-    setTimeout(() => setErrorMessage(null), 3000);
+    // 5秒后自动清除错误信息，或用户可以手动关闭
+    setTimeout(() => setErrorMessage(null), 5000);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* 顶部导航栏 */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-40">
+      <header className="border-b bg-white/95 sticky top-0 z-40 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2">
@@ -111,7 +116,7 @@ export default function HomePage() {
 
         {/* 自动组图模式说明 */}
         <div className="max-w-3xl mx-auto text-center space-y-2">
-          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border rounded-full px-4 py-2">
+          <div className="inline-flex items-center gap-2 bg-white/95 border rounded-full px-4 py-2">
             <span className="text-sm font-medium">{t.form.modeLabel}</span>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -120,23 +125,31 @@ export default function HomePage() {
         </div>
 
         {/* 生成表单 */}
-        <section className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8">
+        <section className="bg-white/95 rounded-2xl shadow-lg p-8">
           <GenerationForm
-            onGenerateSuccess={handleGenerateSuccess}
+            onGenerateSuccess={(result, prompt) => handleGenerateSuccess(result, prompt)}
             onGenerateError={handleGenerateError}
           />
           
           {/* 错误提示 */}
           {errorMessage && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-              {errorMessage}
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm relative">
+              <button
+                onClick={() => setErrorMessage(null)}
+                className="absolute top-2 right-2 text-red-400 hover:text-red-600 transition-colors"
+                aria-label="关闭错误提示"
+              >
+                ✕
+              </button>
+              <p>{errorMessage}</p>
+              <p className="text-xs text-red-400 mt-2">提示：错误信息将在 5 秒后自动消失</p>
             </div>
           )}
         </section>
 
         {/* 生成结果展示 */}
         {generatedImages.length > 0 && (
-          <section className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8">
+          <section className="bg-white/95 rounded-2xl shadow-lg p-8" style={{ contain: 'layout style paint' }}>
             <ImageGallery images={generatedImages} prompt={currentPrompt} />
           </section>
         )}

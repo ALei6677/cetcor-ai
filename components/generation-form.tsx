@@ -36,8 +36,8 @@ type FormData = z.infer<typeof formSchema>;
  * GenerationForm组件Props
  */
 interface IGenerationFormProps {
-  /** 生成成功回调 */
-  onGenerateSuccess?: (result: ISeedreamResponse) => void;
+  /** 生成成功回调，包含结果和提示词 */
+  onGenerateSuccess?: (result: ISeedreamResponse, prompt: string) => void;
   /** 生成失败回调 */
   onGenerateError?: (error: string) => void;
 }
@@ -79,14 +79,6 @@ export function GenerationForm({ onGenerateSuccess, onGenerateError }: IGenerati
     setIsGenerating(true);
 
     try {
-      // Debug: 打印表单数据
-      console.log('表单提交的数据:', {
-        prompt: data.prompt,
-        size: data.size,
-        maxImages: data.maxImages,
-        watermark: data.watermark,
-      });
-      
       // 调用API生成图片
       const response = await fetch('/api/generate', {
         method: 'POST',
@@ -123,8 +115,8 @@ export function GenerationForm({ onGenerateSuccess, onGenerateError }: IGenerati
         },
       });
 
-      // 触发成功回调
-      onGenerateSuccess?.(result.data);
+      // 触发成功回调，传递结果和提示词
+      onGenerateSuccess?.(result.data, data.prompt);
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '生成失败';

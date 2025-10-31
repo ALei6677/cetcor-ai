@@ -26,9 +26,11 @@ export async function POST(request: NextRequest) {
     // 2. 验证输入参数
     const validated = GenerateRequestSchema.parse(body);
     
-    // Debug: 打印收到的参数
-    console.log('收到的请求参数:', JSON.stringify(body, null, 2));
-    console.log('验证后的size参数:', validated.size);
+    // Debug: 仅在开发环境打印参数
+    if (process.env.NODE_ENV === 'development') {
+      console.log('收到的请求参数:', JSON.stringify(body, null, 2));
+      console.log('验证后的size参数:', validated.size);
+    }
 
     // 3. 检查API密钥
     const apiKey = process.env.SEEDREAM_API_KEY;
@@ -47,7 +49,7 @@ export async function POST(request: NextRequest) {
     const result = await client.generateImageWithRetry({
       prompt: validated.prompt,
       size: validated.size || '2k',
-      sequential_image_generation: 'on',  // 强制开启序列化生成
+      sequential_image_generation: 'auto',  // 自动序列化生成（API只接受 'auto' 或 'disabled'）
       sequential_image_generation_options: {
         max_images: validated.maxImages || 3,
       },

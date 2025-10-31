@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Download, Copy } from 'lucide-react';
+import { Download, Copy, Check } from 'lucide-react';
 import { useTranslation } from '@/stores/language-store';
 
 /**
@@ -22,6 +22,7 @@ interface IImageGalleryProps {
  */
 export function ImageGallery({ images, prompt }: IImageGalleryProps) {
   const t = useTranslation();
+  const [copySuccess, setCopySuccess] = useState(false);
 
   /**
    * 下载图片
@@ -30,28 +31,36 @@ export function ImageGallery({ images, prompt }: IImageGalleryProps) {
    */
   const handleDownload = async (imageUrl: string, index: number) => {
     try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      // 使用API代理下载，避免CORS问题
+      const downloadUrl = `/api/download?url=${encodeURIComponent(imageUrl)}`;
       const link = document.createElement('a');
-      link.href = url;
-      link.download = `seedream-${Date.now()}-${index + 1}.png`;
+      link.href = downloadUrl;
+      link.download = `seedream-${Date.now()}-${index + 1}.jpg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('下载失败:', error);
+      alert('下载失败，请稍后重试');
     }
   };
 
   /**
    * 复制提示词到剪贴板
    */
-  const handleCopyPrompt = () => {
+  const handleCopyPrompt = async () => {
     if (prompt) {
-      navigator.clipboard.writeText(prompt);
-      // 这里可以添加Toast提示
+      try {
+        await navigator.clipboard.writeText(prompt);
+        // 显示成功提示
+        setCopySuccess(true);
+        setTimeout(() => {
+          setCopySuccess(false);
+        }, 2000);
+      } catch (error) {
+        console.error('复制失败:', error);
+        alert('复制失败，请手动复制');
+      }
     }
   };
 
@@ -73,9 +82,19 @@ export function ImageGallery({ images, prompt }: IImageGalleryProps) {
             variant="outline"
             size="sm"
             onClick={handleCopyPrompt}
+            className={copySuccess ? 'text-green-600 border-green-600' : ''}
           >
-            <Copy className="mr-2 h-4 w-4" />
-            {t.gallery.copyPrompt}
+            {copySuccess ? (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                已复制
+              </>
+            ) : (
+              <>
+                <Copy className="mr-2 h-4 w-4" />
+                {t.gallery.copyPrompt}
+              </>
+            )}
           </Button>
         )}
       </div>
@@ -85,19 +104,21 @@ export function ImageGallery({ images, prompt }: IImageGalleryProps) {
         {images.map((imageUrl, index) => (
           <div
             key={index}
-            className="group relative aspect-square overflow-hidden rounded-lg border bg-muted"
+            className="group relative aspect-square overflow-hidden rounded-lg border bg-muted gpu-accelerated"
           >
             {/* 图片 */}
             <Image
               src={imageUrl}
               alt={`Generated image ${index + 1}`}
               fill
-              className="object-cover transition-transform group-hover:scale-105"
+              className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              loading="lazy"
+              quality={75}
             />
 
             {/* 悬停操作按钮 */}
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center pointer-events-none group-hover:pointer-events-auto">
               <Button
                 variant="secondary"
                 size="sm"

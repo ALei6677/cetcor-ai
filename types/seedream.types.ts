@@ -6,8 +6,8 @@ export interface ISeedreamRequest {
   prompt: string;
   /** 参考图片URL数组（可选） */
   image?: string[];
-  /** 是否启用序列化图片生成 */
-  sequential_image_generation?: 'auto' | 'on' | 'off';
+  /** 是否启用序列化图片生成（API只接受 'auto' 或 'disabled'） */
+  sequential_image_generation?: 'auto' | 'disabled';
   /** 序列化生成选项 */
   sequential_image_generation_options?: {
     /** 最大生成图片数量 */
