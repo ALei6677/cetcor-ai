@@ -1,6 +1,6 @@
-# Seedream AI 图片生成平台
+# Cetcor.AI 图片生成平台
 
-基于 Seedream 4.0 API 的 AI 图片生成网站 MVP。
+基于火山引擎 Seedream 4.0 API 的 AI 图片生成网站 MVP。
 
 ## ✨ 功能特性
 
@@ -35,7 +35,7 @@ yarn install
 
 ### 2. 配置环境变量
 
-创建 `.env.local` 文件并填入您的 Seedream API 密钥：
+创建 `.env.local` 文件并填入您的 API 密钥：
 
 ```env
 SEEDREAM_API_KEY=your_api_key_here
@@ -58,7 +58,7 @@ yarn dev
 ## 📁 项目结构
 
 ```
-seedream-ai/
+cetcor-ai/
 ├── app/                    # Next.js App Router
 │   ├── api/               # API 路由
 │   │   └── generate/      # 图片生成 API
@@ -79,7 +79,7 @@ seedream-ai/
 │   ├── history-store.ts   # 历史记录 Store
 │   └── language-store.ts  # 多语言 Store
 ├── types/                 # TypeScript 类型定义
-│   └── seedream.types.ts  # Seedream API 类型
+│   └── seedream.types.ts  # API 类型定义
 └── constants/             # 常量配置
     └── api.constants.ts   # API 相关常量
 ```

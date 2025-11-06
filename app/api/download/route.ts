@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
         status: 200,
         headers: {
           'Content-Type': contentType,
-          'Content-Disposition': `attachment; filename="seedream-${Date.now()}.${contentType.split('/')[1] || 'jpg'}"`,
+          'Content-Disposition': `attachment; filename="cetcor-${Date.now()}.${contentType.split('/')[1] || 'jpg'}"`,
           'Cache-Control': 'no-cache',
         },
       });

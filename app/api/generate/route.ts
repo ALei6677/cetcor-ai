@@ -77,7 +77,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 处理其他错误
-    console.error('图片生成错误:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('图片生成错误:', error);
+    }
     return NextResponse.json<IApiResponse>({
       success: false,
       data: null,
@@ -93,7 +95,7 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     status: 'ok',
-    message: 'Seedream API endpoint is ready',
+    message: 'Cetcor.AI API endpoint is ready',
   });
 }
 

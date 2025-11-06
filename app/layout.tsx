@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Doubao Seedream 4.0 - AI图片生成平台",
+  title: "Cetcor.AI - AI图片生成平台",
   description: "体验图片生成，让创意摇摆 - 基于火山引擎的AI图片生成服务",
 };
 

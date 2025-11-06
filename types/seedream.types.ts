@@ -1,5 +1,5 @@
 /**
- * Seedream API请求参数接口
+ * API请求参数接口
  */
 export interface ISeedreamRequest {
   /** 生成图片的提示词 */
@@ -24,7 +24,7 @@ export interface ISeedreamRequest {
 }
 
 /**
- * Seedream API响应接口
+ * API响应接口
  */
 export interface ISeedreamResponse {
   /** 生成的图片数据 */

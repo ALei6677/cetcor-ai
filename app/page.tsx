@@ -13,7 +13,7 @@ import { History, Sparkles } from 'lucide-react';
 
 /**
  * 首页组件
- * Seedream AI图片生成平台的主页面
+ * Cetcor.AI 图片生成平台的主页面
  */
 export default function HomePage() {
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
@@ -57,14 +57,12 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 via-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              火山引擎
+            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Cetcor.AI
             </span>
-            <span className="text-sm text-muted-foreground">|</span>
-            <span className="text-sm text-muted-foreground">火山方舟</span>
           </div>
 
           {/* 右侧操作 */}
@@ -97,11 +95,7 @@ export default function HomePage() {
         <div className="text-center space-y-4">
           <h1 className="text-5xl md:text-6xl font-bold">
             <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Doubao Seedream
-            </span>
-            {' '}
-            <span className="inline-block bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">
-              {t.hero.version}
+              Cetcor.AI
             </span>
           </h1>
           <p className="text-xl text-muted-foreground">

@@ -43,7 +43,7 @@ export const DEFAULT_GENERATION_PARAMS = {
  * 本地存储键名
  */
 export const STORAGE_KEYS = {
-  HISTORY: 'seedream_history',
-  LANGUAGE: 'seedream_language',
+  HISTORY: 'cetcor_history',
+  LANGUAGE: 'cetcor_language',
 } as const;
 

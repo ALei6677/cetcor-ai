@@ -67,8 +67,8 @@ export const translations = {
     },
     // 首页标题
     hero: {
-      title: 'Doubao Seedream',
-      version: '4.0',
+      title: 'Cetcor.AI',
+      version: '',
       subtitle: '体验图片生成，让创意摇摆',
     },
     // 表单
@@ -120,8 +120,8 @@ export const translations = {
     },
     // Hero
     hero: {
-      title: 'Doubao Seedream',
-      version: '4.0',
+      title: 'Cetcor.AI',
+      version: '',
       subtitle: 'Experience Image Generation, Let Creativity Swing',
     },
     // Form

@@ -2,8 +2,8 @@ import { API_ENDPOINT, API_MODEL } from '@/constants/api.constants';
 import type { ISeedreamRequest, ISeedreamResponse } from '@/types/seedream.types';
 
 /**
- * Seedream API客户端类
- * 封装与Seedream 4.0 API的交互逻辑
+ * API客户端类
+ * 封装与火山引擎 Seedream 4.0 API的交互逻辑
  */
 export class SeedreamClient {
   private apiKey: string;
@@ -37,7 +37,7 @@ export class SeedreamClient {
       
       // Debug: 仅在开发环境打印请求
       if (process.env.NODE_ENV === 'development') {
-        console.log('🚀 发送给Seedream API的请求体:', JSON.stringify(requestBody, null, 2));
+        console.log('🚀 发送给API的请求体:', JSON.stringify(requestBody, null, 2));
       }
       
       const response = await fetch(this.endpoint, {
@@ -63,7 +63,7 @@ export class SeedreamClient {
       
       // Debug: 仅在开发环境打印响应
       if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Seedream API响应:', {
+        console.log('✅ API响应:', {
           返回图片数量: data.data?.length || 0,
           请求ID: data.id,
           完整响应: JSON.stringify(data, null, 2)
