@@ -1,0 +1,24 @@
+# 前端开发规范
+
+## 组件编写模式
+```typescript
+interface IComponentProps {
+  title: string;
+  onClick?: () => void;
+  children?: React.ReactNode;
+}
+
+export const Component: React.FC<IComponentProps> = ({
+  title,
+  onClick,
+  children,
+}) => {
+  const [state, setState] = useState<string>('');
+  
+  return (
+    <div className="component-container">
+      <h2>{title}</h2>
+      {children}
+    </div>
+  );
+};

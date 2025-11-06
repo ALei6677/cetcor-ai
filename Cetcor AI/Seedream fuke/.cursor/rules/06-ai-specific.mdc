@@ -1,0 +1,18 @@
+```markdown
+# AI图片生成特定规则
+
+## Seedream 4.0 API集成
+```typescript
+interface ISeedreamRequest {
+  prompt: string;
+  width?: number;
+  height?: number;
+  steps?: number;
+  cfg_scale?: number;
+}
+
+export class SeedreamClient {
+  async generateImage(request: ISeedreamRequest): Promise<string> {
+    // API调用实现
+  }
+}
