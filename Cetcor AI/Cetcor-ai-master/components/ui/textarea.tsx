@@ -5,8 +5,7 @@ import { cn } from "@/lib/utils"
 /**
  * Textarea组件的Props接口
  */
-export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
 /**
  * Textarea多行文本输入组件

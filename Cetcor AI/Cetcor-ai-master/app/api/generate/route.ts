@@ -11,7 +11,24 @@ const GenerateRequestSchema = z.object({
   size: z.enum(['1k', '2k', '4k', '1024x1024', '1920x1080', '1080x1920', '1600x1200', '1200x1600']).optional(),
   maxImages: z.number().min(1).max(6).optional(),
   watermark: z.boolean().optional(),
-  image: z.array(z.string().url()).optional(),
+  // 支持普通URL和base64 data URL
+  image: z.array(
+    z.string().refine(
+      (val) => {
+        // 检查是否为有效的URL或base64 data URL
+        try {
+          if (val.startsWith('data:image/')) {
+            return true; // base64 data URL
+          }
+          new URL(val); // 普通URL
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      { message: '图片URL格式无效，必须是有效的URL或base64 data URL' }
+    )
+  ).optional(),
 });
 
 /**

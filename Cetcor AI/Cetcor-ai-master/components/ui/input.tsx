@@ -5,8 +5,7 @@ import { cn } from "@/lib/utils"
 /**
  * Input组件的Props接口
  */
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
+export type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 /**
  * Input输入框组件

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,8 +17,9 @@ import {
 import { SIZE_OPTIONS, MAX_IMAGES_OPTIONS } from '@/constants/api.constants';
 import { useTranslation } from '@/stores/language-store';
 import { useHistoryStore } from '@/stores/history-store';
-import type { ISeedreamResponse } from '@/types/seedream.types';
+import type { IApiResponse, ISeedreamRequest, ISeedreamResponse } from '@/types/seedream.types';
 import { Loader2 } from 'lucide-react';
+import { ReferenceImageUpload, type ReferenceImage } from '@/components/reference-image-upload';
 
 /**
  * 表单验证Schema
@@ -40,16 +41,19 @@ interface IGenerationFormProps {
   onGenerateSuccess?: (result: ISeedreamResponse, prompt: string) => void;
   /** 生成失败回调 */
   onGenerateError?: (error: string) => void;
+  /** 外部预填提示词 */
+  initialPrompt?: string;
 }
 
 /**
  * 图片生成表单组件
  * 提供提示词输入、参数选择和生成功能
  */
-export function GenerationForm({ onGenerateSuccess, onGenerateError }: IGenerationFormProps) {
+export function GenerationForm({ onGenerateSuccess, onGenerateError, initialPrompt }: IGenerationFormProps) {
   const t = useTranslation();
   const addHistoryItem = useHistoryStore((state) => state.addItem);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
 
   // 初始化表单
   const {
@@ -57,6 +61,8 @@ export function GenerationForm({ onGenerateSuccess, onGenerateError }: IGenerati
     handleSubmit,
     watch,
     setValue,
+    setFocus,
+    getValues,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -71,6 +77,31 @@ export function GenerationForm({ onGenerateSuccess, onGenerateError }: IGenerati
   const size = watch('size');
   const maxImages = watch('maxImages');
 
+  // 当外部传入 initialPrompt 时，更新到表单并聚焦
+  useEffect(() => {
+    if (initialPrompt === undefined) {
+      return;
+    }
+
+    const currentPrompt = getValues('prompt');
+    if (currentPrompt === initialPrompt) {
+      return;
+    }
+
+    setValue('prompt', initialPrompt, { shouldValidate: true });
+    const timeoutId = window.setTimeout(() => {
+      try {
+        setFocus('prompt');
+      } catch {
+        // 非致命
+      }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [initialPrompt, setValue, setFocus, getValues]);
+
   /**
    * 处理表单提交
    * @param data - 表单数据
@@ -79,30 +110,40 @@ export function GenerationForm({ onGenerateSuccess, onGenerateError }: IGenerati
     setIsGenerating(true);
 
     try {
+      // 准备请求体，包含参考图URL数组（如果有）
+      const requestBody: ISeedreamRequest = {
+        prompt: data.prompt,
+        size: data.size,
+        watermark: data.watermark,
+      };
+
+      // 如果有参考图，添加到请求中
+      if (referenceImages.length > 0) {
+        requestBody.image = referenceImages.map((img) => img.url);
+      }
+      if (data.maxImages) {
+        requestBody.maxImages = data.maxImages;
+      }
+
       // 调用API生成图片
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          prompt: data.prompt,
-          size: data.size,
-          maxImages: data.maxImages,
-          watermark: data.watermark,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      const result = await response.json();
+      const result: IApiResponse<ISeedreamResponse> = await response.json();
 
-      if (!result.success) {
+      if (!result.success || !result.data) {
         throw new Error(result.error || '生成失败');
       }
 
       // 提取图片URL
       const images = result.data.data
-        .map((img: any) => img.url)
-        .filter((url: string) => url);
+        .map((img) => img.url)
+        .filter((url): url is string => Boolean(url));
 
       // 添加到历史记录
       addHistoryItem({
@@ -128,6 +169,13 @@ export function GenerationForm({ onGenerateSuccess, onGenerateError }: IGenerati
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-3xl mx-auto space-y-6">
+      {/* 参考图上传 */}
+      <ReferenceImageUpload
+        images={referenceImages}
+        onChange={setReferenceImages}
+        maxImages={5}
+      />
+
       {/* 提示词输入 */}
       <div className="space-y-2">
         <Label htmlFor="prompt">{t.form.promptLabel}</Label>

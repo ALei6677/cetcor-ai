@@ -35,7 +35,7 @@ export function ImageGallery({ images, prompt }: IImageGalleryProps) {
       const downloadUrl = `/api/download?url=${encodeURIComponent(imageUrl)}`;
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = `cetcor-${Date.now()}-${index + 1}.jpg`;
+      link.download = `cetcor-image-${index + 1}.jpg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

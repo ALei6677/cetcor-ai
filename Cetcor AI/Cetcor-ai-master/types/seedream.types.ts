@@ -6,6 +6,8 @@ export interface ISeedreamRequest {
   prompt: string;
   /** 参考图片URL数组（可选） */
   image?: string[];
+  /** 最大生成数量（客户端自定义字段） */
+  maxImages?: number;
   /** 是否启用序列化图片生成（API只接受 'auto' 或 'disabled'） */
   sequential_image_generation?: 'auto' | 'disabled';
   /** 序列化生成选项 */
@@ -49,7 +51,7 @@ export interface ISeedreamImage {
 /**
  * 标准化API响应接口
  */
-export interface IApiResponse<T = any> {
+export interface IApiResponse<T = unknown> {
   /** 请求是否成功 */
   success: boolean;
   /** 响应数据 */

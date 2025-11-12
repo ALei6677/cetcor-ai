@@ -70,9 +70,9 @@ export async function GET(request: NextRequest) {
           'Cache-Control': 'no-cache',
         },
       });
-    } catch (fetchError: any) {
+    } catch (fetchError: unknown) {
       clearTimeout(timeoutId);
-      if (fetchError.name === 'AbortError') {
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
         return NextResponse.json(
           { error: '下载超时，请稍后重试' },
           { status: 408 }

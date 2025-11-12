@@ -1,3 +1,5 @@
+ 'use client';
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { STORAGE_KEYS } from '@/constants/api.constants';
@@ -13,10 +15,16 @@ export type Language = 'zh' | 'en';
 interface ILanguageState {
   /** 当前语言 */
   language: Language;
-  
+
+  /** Store 是否已完成 hydration */
+  hasHydrated: boolean;
+
   /** 设置语言 */
   setLanguage: (lang: Language) => void;
-  
+
+  /** 设置 hydration 状态 */
+  setHasHydrated: (value: boolean) => void;
+
   /** 切换语言 */
   toggleLanguage: () => void;
 }
@@ -28,8 +36,9 @@ interface ILanguageState {
 export const useLanguageStore = create<ILanguageState>()(
   persist(
     (set, get) => ({
-      // 默认中文
-      language: 'zh',
+      // 默认英文
+      language: 'en',
+      hasHydrated: false,
 
       /**
        * 设置语言
@@ -37,6 +46,14 @@ export const useLanguageStore = create<ILanguageState>()(
        */
       setLanguage: (lang) => {
         set({ language: lang });
+      },
+
+      /**
+       * 设置 hydration 状态
+       * @param value - 是否已完成 hydration
+       */
+      setHasHydrated: (value) => {
+        set({ hasHydrated: value });
       },
 
       /**
@@ -49,6 +66,14 @@ export const useLanguageStore = create<ILanguageState>()(
     }),
     {
       name: STORAGE_KEYS.LANGUAGE,
+      version: 1,
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          state?.setHasHydrated?.(true);
+          return;
+        }
+        state?.setHasHydrated?.(true);
+      },
     }
   )
 );
@@ -60,10 +85,187 @@ export const translations = {
   zh: {
     // 导航栏
     nav: {
-      goToHomepage: '去充值',
-      apiAccess: 'API接入',
-      console: '控制台',
+      pricing: '定价',
       history: '历史记录',
+    },
+    // 定价页
+    pricing: {
+      back: '返回生成器',
+      cancelAnytime: '随时取消',
+      title: '定价方案',
+      subtitle: '选择最适合你的方案，随时切换或取消订阅。',
+      billingOptions: {
+        monthly: { label: '月付' },
+        yearly: { label: '年付', helper: '节省50%' },
+        oneTime: { label: '一次性' },
+      },
+      plans: [
+        {
+          id: 'basic',
+          name: '基础版',
+          description: '适合入门级个人用户',
+          highlight: {
+            monthly: '每月 500 点数',
+            yearly: '每月 500 点数',
+            oneTime: '总计 600 点数',
+          },
+          pricing: {
+            monthly: {
+              headline: '$7.99',
+              suffix: '/月',
+              total: '$7.99',
+              secondary: '每月扣费',
+            },
+            yearly: {
+              headline: '$7.99',
+              suffix: '/月',
+              total: '$95.90',
+              original: '原价 $118.8/年',
+              secondary: '现价 $95.90/年，一次性支付',
+            },
+            oneTime: {
+              headline: '$89',
+              suffix: '一次性',
+              total: '$89',
+              secondary: '一次性获得 600 点数',
+            },
+          },
+          features: [
+            '每月 500 点数',
+            '每月可生成 50 张高清图片',
+            '标准速度',
+            '基础支持',
+            '无水印',
+          ],
+        },
+        {
+          id: 'pro',
+          name: '专业版',
+          description: '专为创作者与专业人士设计',
+          badge: '最受欢迎',
+          highlight: {
+            monthly: '每月 2000 点数',
+            yearly: '每月 2000 点数',
+            oneTime: '总计 2400 点数',
+          },
+          pricing: {
+            monthly: {
+              headline: '$24.95',
+              suffix: '/月',
+              total: '$24.95',
+              secondary: '每月扣费',
+            },
+            yearly: {
+              headline: '$14.95',
+              suffix: '/月',
+              total: '$179.40',
+              original: '原价 $358.8/年',
+              secondary: '现价 $179.4/年，一次性支付',
+              badge: '节省50%',
+            },
+            oneTime: {
+              headline: '$199',
+              suffix: '一次性',
+              total: '$199',
+              secondary: '一次性获得 2400 点数',
+            },
+          },
+          features: [
+            '每月 2000 点数',
+            '每月可生成 200 张高清图片',
+            '高速生成',
+            '优先支持',
+            '无水印',
+            '商用授权',
+          ],
+        },
+        {
+          id: 'max',
+          name: '旗舰版',
+          description: '满足高强度商业级需求',
+          highlight: {
+            monthly: '每月 6000 点数',
+            yearly: '每月 6000 点数',
+            oneTime: '总计 7200 点数',
+          },
+          pricing: {
+            monthly: {
+              headline: '$69.95',
+              suffix: '/月',
+              total: '$69.95',
+              secondary: '每月扣费',
+            },
+            yearly: {
+              headline: '$39.95',
+              suffix: '/月',
+              total: '$479.40',
+              original: '原价 $958.8/年',
+              secondary: '现价 $479.4/年，一次性支付',
+              badge: '节省50%',
+            },
+            oneTime: {
+              headline: '$549',
+              suffix: '一次性',
+              total: '$549',
+              secondary: '一次性获得 7200 点数',
+            },
+          },
+          features: [
+            '每月 6000 点数',
+            '每月可生成 600 张高清图片',
+            '快速生成',
+            '专属支持',
+            '无水印',
+            '商用授权',
+          ],
+        },
+      ],
+      subscribe: '订阅',
+    },
+    // 结账页
+    checkout: {
+      back: '返回定价',
+      heading: '订阅 {plan}',
+      summaryTitle: '订单摘要',
+      planLabel: '{plan} 套餐',
+      billedFrequency: {
+        monthly: '按月计费',
+        yearly: '按年计费',
+        oneTime: '一次性支付',
+      },
+      pricePeriod: {
+        monthly: '每月',
+        yearly: '每年',
+        oneTime: '一次性',
+      },
+      subtotal: '小计',
+      addPromotionCode: '添加优惠码',
+      totalDueToday: '今日应付',
+      emailLabel: '邮箱',
+      emailPlaceholder: 'name@example.com',
+      paymentMethod: '支付方式',
+      orDivider: '或',
+      paymentMethods: {
+        card: '银行卡',
+        cashApp: 'Cash App Pay',
+        bank: '银行转账',
+      },
+      cardInformation: '卡片信息',
+      cardNumberPlaceholder: '1234 1234 1234 1234',
+      expiryPlaceholder: 'MM / YY',
+      cvcPlaceholder: 'CVC',
+      cardholderName: '持卡人姓名',
+      cardholderPlaceholder: '与卡片一致的姓名',
+      countryOrRegion: '国家或地区',
+      subscribeButton: '确认订阅',
+      secureNote: '支付信息将通过加密渠道安全传输。',
+      cashAppBonus: '返现 $5',
+      countryOptions: [
+        { value: 'china', label: '中国' },
+        { value: 'united-states', label: '美国' },
+        { value: 'singapore', label: '新加坡' },
+        { value: 'united-kingdom', label: '英国' },
+      ],
     },
     // 首页标题
     hero: {
@@ -83,6 +285,12 @@ export const translations = {
       maxImagesUnit: '张',
       generateButton: '生成',
       generating: '生成中...',
+      referenceImageLabel: '参考图（可选）',
+      referenceImageUpload: '上传',
+      referenceImageHint: '最多可上传 {max} 张参考图，支持 JPG、PNG、WebP、GIF 格式，单张不超过 10MB',
+      referenceImageInvalidType: '只支持 JPG、PNG、WebP、GIF 格式的图片',
+      referenceImageTooLarge: '图片大小不能超过 10MB',
+      referenceImageMaxReached: '最多只能上传 {max} 张参考图',
     },
     // 图片画廊
     gallery: {
@@ -113,10 +321,187 @@ export const translations = {
   en: {
     // Navigation
     nav: {
-      goToHomepage: 'Top Up',
-      apiAccess: 'API Access',
-      console: 'Console',
+      pricing: 'Pricing',
       history: 'History',
+    },
+    // Pricing Page
+    pricing: {
+      back: 'Back to generator',
+      cancelAnytime: 'Cancel anytime',
+      title: 'Pricing',
+      subtitle: 'Choose the plan that works best for you. Switch plans or cancel at any time.',
+      billingOptions: {
+        monthly: { label: 'Monthly' },
+        yearly: { label: 'Yearly', helper: 'SAVE 50%' },
+        oneTime: { label: 'One-Time' },
+      },
+      plans: [
+        {
+          id: 'basic',
+          name: 'Basic',
+          description: 'Perfect for individuals getting started',
+          highlight: {
+            monthly: '500 credits/month',
+            yearly: '500 credits/month',
+            oneTime: '600 credits total',
+          },
+          pricing: {
+            monthly: {
+              headline: '$7.99',
+              suffix: '/month',
+              total: '$7.99',
+              secondary: 'Billed monthly',
+            },
+            yearly: {
+              headline: '$7.99',
+              suffix: '/month',
+              total: '$95.90',
+              original: '$118.8/year',
+              secondary: 'Now $95.90/year billed upfront',
+            },
+            oneTime: {
+              headline: '$89',
+              suffix: 'one-time',
+              total: '$89',
+              secondary: 'Includes 600 credits upfront',
+            },
+          },
+          features: [
+            '500 credits per month',
+            '50 high-quality images per month',
+            'Standard speed',
+            'Basic support',
+            'No watermark',
+          ],
+        },
+        {
+          id: 'pro',
+          name: 'Pro',
+          description: 'Best for creators and professionals',
+          badge: 'Most Popular',
+          highlight: {
+            monthly: '2000 credits/month',
+            yearly: '2000 credits/month',
+            oneTime: '2400 credits total',
+          },
+          pricing: {
+            monthly: {
+              headline: '$24.95',
+              suffix: '/month',
+              total: '$24.95',
+              secondary: 'Billed monthly',
+            },
+            yearly: {
+              headline: '$14.95',
+              suffix: '/month',
+              total: '$179.40',
+              original: '$358.8/year',
+              secondary: 'Now $179.4/year billed upfront',
+              badge: 'SAVE 50%',
+            },
+            oneTime: {
+              headline: '$199',
+              suffix: 'one-time',
+              total: '$199',
+              secondary: 'Includes 2400 credits upfront',
+            },
+          },
+          features: [
+            '2,000 credits per month',
+            '200 high-quality images per month',
+            'High speed',
+            'Priority support',
+            'No watermark',
+            'Commercial use',
+          ],
+        },
+        {
+          id: 'max',
+          name: 'Max',
+          description: 'Enterprise-grade for power users',
+          highlight: {
+            monthly: '6000 credits/month',
+            yearly: '6000 credits/month',
+            oneTime: '7200 credits total',
+          },
+          pricing: {
+            monthly: {
+              headline: '$69.95',
+              suffix: '/month',
+              total: '$69.95',
+              secondary: 'Billed monthly',
+            },
+            yearly: {
+              headline: '$39.95',
+              suffix: '/month',
+              total: '$479.40',
+              original: '$958.8/year',
+              secondary: 'Now $479.4/year billed upfront',
+              badge: 'SAVE 50%',
+            },
+            oneTime: {
+              headline: '$549',
+              suffix: 'one-time',
+              total: '$549',
+              secondary: 'Includes 7200 credits upfront',
+            },
+          },
+          features: [
+            '6,000 credits per month',
+            '600 high-quality images per month',
+            'High speed',
+            'Priority support',
+            'No watermark',
+            'Commercial use',
+          ],
+        },
+      ],
+      subscribe: 'Subscribe',
+    },
+    // Checkout Page
+    checkout: {
+      back: 'Back to pricing',
+      heading: 'Subscribe to {plan}',
+      summaryTitle: 'Order summary',
+      planLabel: '{plan} Plan',
+      billedFrequency: {
+        monthly: 'Billed monthly',
+        yearly: 'Billed annually',
+        oneTime: 'One-time payment',
+      },
+      pricePeriod: {
+        monthly: 'per month',
+        yearly: 'per year',
+        oneTime: 'one-time',
+      },
+      subtotal: 'Subtotal',
+      addPromotionCode: 'Add promotion code',
+      totalDueToday: 'Total due today',
+      emailLabel: 'Email',
+      emailPlaceholder: 'name@example.com',
+      paymentMethod: 'Payment method',
+      orDivider: 'OR',
+      paymentMethods: {
+        card: 'Card',
+        cashApp: 'Cash App Pay',
+        bank: 'Bank',
+      },
+      cardInformation: 'Card information',
+      cardNumberPlaceholder: '1234 1234 1234 1234',
+      expiryPlaceholder: 'MM / YY',
+      cvcPlaceholder: 'CVC',
+      cardholderName: 'Cardholder name',
+      cardholderPlaceholder: 'Full name on card',
+      countryOrRegion: 'Country or region',
+      subscribeButton: 'Subscribe',
+      secureNote: 'Your payment is secured with bank-level encryption.',
+      cashAppBonus: '$5 back',
+      countryOptions: [
+        { value: 'china', label: 'China' },
+        { value: 'united-states', label: 'United States' },
+        { value: 'singapore', label: 'Singapore' },
+        { value: 'united-kingdom', label: 'United Kingdom' },
+      ],
     },
     // Hero
     hero: {
@@ -136,6 +521,12 @@ export const translations = {
       maxImagesUnit: '',
       generateButton: 'Generate',
       generating: 'Generating...',
+      referenceImageLabel: 'Reference Images (Optional)',
+      referenceImageUpload: 'Upload',
+      referenceImageHint: 'Upload up to {max} reference images. Supported formats: JPG, PNG, WebP, GIF. Max 10MB per image',
+      referenceImageInvalidType: 'Only JPG, PNG, WebP, GIF formats are supported',
+      referenceImageTooLarge: 'Image size cannot exceed 10MB',
+      referenceImageMaxReached: 'Maximum {max} reference images allowed',
     },
     // Gallery
     gallery: {
@@ -170,6 +561,10 @@ export const translations = {
  */
 export function useTranslation() {
   const language = useLanguageStore((state) => state.language);
-  return translations[language];
+  const hasHydrated = useLanguageStore((state) => state.hasHydrated);
+
+  const effectiveLanguage = hasHydrated ? language : 'en';
+
+  return translations[effectiveLanguage];
 }
 

@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { HeroCarousel } from '@/components/hero-carousel';
+// import { HeroCarousel } from '@/components/hero-carousel';
+import { CaseShowcase } from '@/components/case-showcase';
 import { GenerationForm } from '@/components/generation-form';
 import { ImageGallery } from '@/components/image-gallery';
 import { HistoryDialog } from '@/components/history-dialog';
@@ -10,6 +11,7 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { useTranslation } from '@/stores/language-store';
 import type { ISeedreamResponse } from '@/types/seedream.types';
 import { History, Sparkles } from 'lucide-react';
+import Link from 'next/link';
 
 /**
  * 首页组件
@@ -18,9 +20,21 @@ import { History, Sparkles } from 'lucide-react';
 export default function HomePage() {
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState<string>('');
+  const [prefillPrompt, setPrefillPrompt] = useState<string>('');
   const [historyOpen, setHistoryOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const formRef = useRef<HTMLElement>(null);
   const t = useTranslation();
+  
+  // 当 prefillPrompt 改变时，滚动到表单区域
+  useEffect(() => {
+    if (prefillPrompt && formRef.current && typeof window !== 'undefined') {
+      // 使用 setTimeout 确保 DOM 已更新
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [prefillPrompt]);
   
   /**
    * 处理生成成功
@@ -76,14 +90,8 @@ export default function HomePage() {
               <History className="mr-2 h-4 w-4" />
               {t.nav.history}
             </Button>
-            <Button variant="outline" size="sm">
-              {t.nav.apiAccess}
-            </Button>
-            <Button size="sm">
-              {t.nav.console}
-            </Button>
-            <Button variant="default" size="sm">
-              {t.nav.goToHomepage}
+            <Button asChild size="sm">
+              <Link href="/pricing">{t.nav.pricing}</Link>
             </Button>
           </div>
         </div>
@@ -103,9 +111,12 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* 轮播展示区 */}
-        <section>
-          <HeroCarousel />
+        {/* 案例展示区 */}
+        <section className="bg-white/95 rounded-2xl shadow-lg p-4 sm:p-6 lg:p-8 overflow-hidden">
+          <CaseShowcase onSelect={(p) => {
+            setPrefillPrompt(p);
+            setCurrentPrompt(p);
+          }} />
         </section>
 
         {/* 自动组图模式说明 */}
@@ -119,10 +130,11 @@ export default function HomePage() {
         </div>
 
         {/* 生成表单 */}
-        <section className="bg-white/95 rounded-2xl shadow-lg p-8">
+        <section ref={formRef} id="generation-form-anchor" className="bg-white/95 rounded-2xl shadow-lg p-8">
           <GenerationForm
             onGenerateSuccess={(result, prompt) => handleGenerateSuccess(result, prompt)}
             onGenerateError={handleGenerateError}
+            initialPrompt={prefillPrompt}
           />
           
           {/* 错误提示 */}
@@ -143,7 +155,7 @@ export default function HomePage() {
 
         {/* 生成结果展示 */}
         {generatedImages.length > 0 && (
-          <section className="bg-white/95 rounded-2xl shadow-lg p-8" style={{ contain: 'layout style paint' }}>
+          <section className="bg-white/95 rounded-2xl shadow-lg p-8 contain-layout">
             <ImageGallery images={generatedImages} prompt={currentPrompt} />
           </section>
         )}
