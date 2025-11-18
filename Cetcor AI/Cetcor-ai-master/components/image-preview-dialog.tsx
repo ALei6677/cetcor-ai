@@ -36,7 +36,9 @@ export function ImagePreviewDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
-          {title && <DialogTitle>{title}</DialogTitle>}
+          <DialogTitle className={title ? undefined : 'sr-only'}>
+            {title || '图片预览'}
+          </DialogTitle>
         </DialogHeader>
         <div className="px-6 pb-6 flex items-center justify-center bg-gray-50 rounded-b-lg">
           <img

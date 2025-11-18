@@ -4,14 +4,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 // import { HeroCarousel } from '@/components/hero-carousel';
 import { CaseShowcase } from '@/components/case-showcase';
-import { GenerationForm } from '@/components/generation-form';
+import { GenerationForm } from '../components/generation-form';
 import { ImageGallery } from '@/components/image-gallery';
 import { HistoryDialog } from '@/components/history-dialog';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { useTranslation } from '@/stores/language-store';
+import { AuthButton } from '@/components/auth-button';
+import { CreditsSummary } from '@/components/credits-summary';
 import type { ISeedreamResponse } from '@/types/seedream.types';
 import { History, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { supabaseBrowserClient } from '@/lib/supabase-browser';
 
 /**
  * 首页组件
@@ -25,6 +28,55 @@ export default function HomePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const formRef = useRef<HTMLElement>(null);
   const t = useTranslation();
+  
+  // 处理认证回调：主动触发会话交换并清理URL参数
+  useEffect(() => {
+    if (typeof window === 'undefined' || !supabaseBrowserClient) return;
+    
+    const handleAuthCallback = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const error = urlParams.get('error');
+      const errorDescription = urlParams.get('error_description');
+      
+      // 如果有错误参数，显示错误信息
+      if (error) {
+        console.error('[page] 认证错误:', error, errorDescription);
+        setErrorMessage(errorDescription || error || '认证失败，请重试');
+        // 清理URL参数
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('error');
+        newUrl.searchParams.delete('error_description');
+        window.history.replaceState({}, '', newUrl.toString());
+        return;
+      }
+      
+      // 如果有code参数，触发 Supabase 的自动检测
+      // detectSessionInUrl: true 应该会自动处理，但我们主动调用 getSession() 来触发
+      if (code) {
+        console.log('[page] 检测到认证code，等待 Supabase 自动处理...');
+        
+        // Supabase 的 detectSessionInUrl 会在客户端初始化时自动检测 URL 中的 code
+        // 我们等待一小段时间让 Supabase 处理，然后检查会话状态
+        // 如果 AuthProvider 的 onAuthStateChange 监听到 SIGNED_IN 事件，状态会自动更新
+        
+        // 延迟清理 URL，给 Supabase 足够的时间处理
+        const cleanupTimer = setTimeout(() => {
+          const newUrl = new URL(window.location.href);
+          if (newUrl.searchParams.has('code')) {
+            console.log('[page] 清理URL中的code参数');
+            newUrl.searchParams.delete('code');
+            newUrl.searchParams.delete('auth_callback');
+            window.history.replaceState({}, '', newUrl.toString());
+          }
+        }, 3000); // 给 Supabase 3 秒时间处理
+        
+        return () => clearTimeout(cleanupTimer);
+      }
+    };
+    
+    handleAuthCallback();
+  }, []);
   
   // 当 prefillPrompt 改变时，滚动到表单区域
   useEffect(() => {
@@ -77,6 +129,7 @@ export default function HomePage() {
             <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
               Cetcor AI
             </span>
+            <AuthButton />
           </div>
 
           {/* 右侧操作 */}
@@ -129,10 +182,15 @@ export default function HomePage() {
           </p>
         </div>
 
+        {/* 订阅点数概览 */}
+        <section className="max-w-3xl mx-auto w-full">
+          <CreditsSummary />
+        </section>
+
         {/* 生成表单 */}
         <section ref={formRef} id="generation-form-anchor" className="bg-white/95 rounded-2xl shadow-lg p-8">
           <GenerationForm
-            onGenerateSuccess={(result, prompt) => handleGenerateSuccess(result, prompt)}
+            onGenerateSuccess={handleGenerateSuccess}
             onGenerateError={handleGenerateError}
             initialPrompt={prefillPrompt}
           />

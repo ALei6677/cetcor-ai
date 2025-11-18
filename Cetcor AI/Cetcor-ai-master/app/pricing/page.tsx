@@ -44,7 +44,7 @@ export default function PricingPage() {
 
   const plans = t.pricing.plans as Plan[];
   const handleSubscribe = (planId: string) => {
-    router.push(`/checkout?plan=${planId}&billing=${billingCycle}`);
+    router.push(`/subscribe?plan=${planId}&billing=${billingCycle}`);
   };
 
   return (

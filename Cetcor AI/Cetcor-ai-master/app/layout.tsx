@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerHandler } from "@/components/service-worker-handler";
+import { AppProviders } from "@/components/providers/app-providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,13 +24,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const bodyHydrationFix = {
+    "ap-style": "",
+  } as const;
+
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        {...bodyHydrationFix}
       >
         <ServiceWorkerHandler />
-        {children}
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );
