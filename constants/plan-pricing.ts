@@ -17,36 +17,36 @@ export const PLAN_PRICING: PlanPricingConfig = {
     monthly: {
       price: 15,
       credits: 240,
-      paypalPlanId: 'P-11U5718285742053WNEOHLGY',
+      paypalPlanId: 'P-33W263280A994581YNEPNRYQ',
     },
     yearly: {
       price: 144,
       credits: 240,
-      paypalPlanId: 'P-5BS562283P586814ENEOHOXY',
+      paypalPlanId: 'P-0FE744777L2833816NEPNSOA',
     },
   },
   pro: {
     monthly: {
       price: 25,
       credits: 1200,
-      paypalPlanId: 'P-9LY09418ED5289138NEOHQTA',
+      paypalPlanId: 'P-60M89877BT707251GNEPNS4Q',
     },
     yearly: {
       price: 240,
       credits: 1200,
-      paypalPlanId: 'P-0T1494965C620674FNEOHTXI',
+      paypalPlanId: 'P-2UA39161M82718617NEPNTIY',
     },
   },
   max: {
     monthly: {
       price: 55,
       credits: 3600,
-      paypalPlanId: 'P-6W150488WW857202PNEOHSNY',
+      paypalPlanId: 'P-39K35255EV002711VNEPNTWQ',
     },
     yearly: {
       price: 540,
       credits: 3600,
-      paypalPlanId: 'P-0J454073AR074815PNEOHTJA',
+      paypalPlanId: 'P-1S822695CV3353749NEPNUCQ',
     },
   },
 };
