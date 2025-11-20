@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Check, ArrowLeft } from 'lucide-react';
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/stores/language-store';
+import { isOneTimePlanId } from '@/constants/billing';
+import type { PlanId } from '@/constants/billing';
 
 type BillingCycle = 'monthly' | 'yearly' | 'oneTime';
 
@@ -23,7 +25,7 @@ interface PlanPricing {
 }
 
 interface Plan {
-  id: string;
+  id: PlanId;
   name: string;
   description: string;
   badge?: string;
@@ -43,6 +45,12 @@ export default function PricingPage() {
   }));
 
   const plans = t.pricing.plans as Plan[];
+  const visiblePlans = useMemo(() => {
+    if (billingCycle !== 'oneTime') {
+      return plans;
+    }
+    return plans.filter((plan) => isOneTimePlanId(plan.id));
+  }, [billingCycle, plans]);
   const handleSubscribe = (planId: string) => {
     router.push(`/subscribe?plan=${planId}&billing=${billingCycle}`);
   };
@@ -117,7 +125,7 @@ export default function PricingPage() {
         </section>
 
         <section className="grid gap-8 md:grid-cols-3">
-          {plans.map((plan) => {
+          {visiblePlans.map((plan) => {
             const pricing = plan.pricing[billingCycle];
             const highlight = plan.highlight[billingCycle];
 

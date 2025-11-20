@@ -43,6 +43,16 @@ SEEDREAM_API_ENDPOINT=https://ark.cn-beijing.volces.com/api/v3/images/generation
 SEEDREAM_MODEL=doubao-seedream-4-0-250828
 ```
 
+#### PayPal 支付配置
+
+若启用 PayPal 支付，请确保 `PAYPAL_ONETIME_BUTTONS` 只包含 Pro 与 Max 的一次性按钮 ID（Basic 已停用一次性支付）：
+
+```env
+PAYPAL_ONETIME_BUTTONS={"pro":"PRO_HOSTED_BUTTON_ID","max":"MAX_HOSTED_BUTTON_ID"}
+```
+
+> ⚠️ 如仍配置 `basic` 键，将被自动忽略。
+
 ### 3. 启动开发服务器
 
 ```bash

@@ -23,6 +23,12 @@ SEEDREAM_API_ENDPOINT=https://ark.cn-beijing.volces.com/api/v3/images/generation
 SEEDREAM_MODEL=doubao-seedream-4-0-250828
 ```
 
+如果需要开启 PayPal 一次性支付，请在部署平台额外配置 `PAYPAL_ONETIME_BUTTONS`，并且仅保留 Pro 与 Max 的按钮 ID（Basic 套餐的一次性支付已下线）：
+
+```env
+PAYPAL_ONETIME_BUTTONS={"pro":"PRO_HOSTED_BUTTON_ID","max":"MAX_HOSTED_BUTTON_ID"}
+```
+
 **重要提示：**
 - `.env.local` 文件**不会**被提交到 Git（已在 `.gitignore` 中）
 - 需要在部署平台单独配置这些环境变量
