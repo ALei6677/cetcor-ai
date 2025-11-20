@@ -1,3 +1,5 @@
+import { PAYPAL_PLAN_MAPPING as DEFAULT_PAYPAL_PLAN_MAPPING } from './plan-pricing';
+
 export type BillingType = 'monthly' | 'yearly';
 export type PlanId = 'basic' | 'pro' | 'max';
 
@@ -55,14 +57,43 @@ const parseJsonEnv = <T>(value: string | undefined, label: string): T | null => 
   }
 };
 
+const PLAN_IDS: PlanId[] = ['basic', 'pro', 'max'];
+const BILLING_TYPES: BillingType[] = ['monthly', 'yearly'];
+
+const isValidPlanMapping = (mapping: PaypalPlanMapping | null): mapping is PaypalPlanMapping => {
+  if (!mapping) {
+    return false;
+  }
+  return BILLING_TYPES.every((billingType) =>
+    PLAN_IDS.every((planId) => {
+      const paypalPlanId = mapping[billingType]?.[planId];
+      return typeof paypalPlanId === 'string' && paypalPlanId.length > 0;
+    })
+  );
+};
+
 export const getPaypalPlanMapping = (): PaypalPlanMapping | null => {
   if (cachedPlanMapping) {
     return cachedPlanMapping;
   }
-  cachedPlanMapping = parseJsonEnv<PaypalPlanMapping>(
+
+  const envMapping = parseJsonEnv<PaypalPlanMapping>(
     process.env.PAYPAL_PLAN_MAPPING,
     'PAYPAL_PLAN_MAPPING'
   );
+
+  if (isValidPlanMapping(envMapping)) {
+    cachedPlanMapping = envMapping;
+    return cachedPlanMapping;
+  }
+
+  if (process.env.PAYPAL_PLAN_MAPPING) {
+    console.warn('[billing] PAYPAL_PLAN_MAPPING 无效，回退至内置默认值。');
+  } else {
+    console.warn('[billing] PAYPAL_PLAN_MAPPING 未配置，回退至内置默认值。');
+  }
+
+  cachedPlanMapping = DEFAULT_PAYPAL_PLAN_MAPPING;
   return cachedPlanMapping;
 };
 
