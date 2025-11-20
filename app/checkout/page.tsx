@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  DISPATCH_ACTION,
   PayPalButtons,
   PayPalButtonsComponentProps,
   usePayPalScriptReducer,
@@ -148,7 +149,7 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({ planId, billingCycle }) => 
     });
 
     dispatch({
-      type: 'resetOptions',
+      type: DISPATCH_ACTION.RESET_OPTIONS,
       value: {
         ...options,
         intent: 'subscription',

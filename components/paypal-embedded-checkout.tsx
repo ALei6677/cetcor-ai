@@ -2,6 +2,7 @@
 
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  DISPATCH_ACTION,
   PayPalButtons,
   PayPalButtonsComponentProps,
   usePayPalScriptReducer,
@@ -110,7 +111,7 @@ export function PayPalEmbeddedCheckout(props: PayPalEmbeddedCheckoutProps) {
     });
 
     dispatch({
-      type: 'resetOptions',
+      type: DISPATCH_ACTION.RESET_OPTIONS,
       value: {
         ...options,
         intent: targetIntent,

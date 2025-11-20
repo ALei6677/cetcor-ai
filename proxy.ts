@@ -1,4 +1,3 @@
-import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 const PAYPAL_CSP = [
@@ -15,7 +14,7 @@ const PAYPAL_CSP = [
   "worker-src 'self';",
 ].join(' ');
 
-export function middleware(_request: NextRequest) {
+export function proxy() {
   const response = NextResponse.next();
   response.headers.set('Content-Security-Policy', PAYPAL_CSP);
   return response;
@@ -24,4 +23,5 @@ export function middleware(_request: NextRequest) {
 export const config = {
   matcher: ['/checkout', '/checkout/:path*'],
 };
+
 
