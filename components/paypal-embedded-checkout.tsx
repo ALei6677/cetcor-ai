@@ -1,7 +1,11 @@
 'use client';
 
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { PayPalButtons, PayPalButtonsComponentProps } from '@paypal/react-paypal-js';
+import {
+  PayPalButtons,
+  PayPalButtonsComponentProps,
+  usePayPalScriptReducer,
+} from '@paypal/react-paypal-js';
 import { AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
 import { isOneTimePlanId } from '@/constants/billing';
 import type { BillingType, PlanId } from '@/constants/billing';
@@ -75,6 +79,7 @@ export function PayPalEmbeddedCheckout(props: PayPalEmbeddedCheckoutProps) {
     onSuccess,
   } = props;
   const { token, loading: authLoading } = useAuthToken();
+  const [{ options }, dispatch] = usePayPalScriptReducer();
   const [status, setStatus] = useState<'idle' | 'creating' | 'approving' | 'success'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [sdkReady, setSdkReady] = useState(false);
@@ -84,6 +89,35 @@ export function PayPalEmbeddedCheckout(props: PayPalEmbeddedCheckoutProps) {
 
   const requiresSubscriptionConfig =
     purchaseType === 'subscription' && (!billingType || !planId);
+
+  const targetIntent = purchaseType === 'subscription' ? 'subscription' : 'capture';
+  const targetVault = purchaseType === 'subscription';
+
+  React.useEffect(() => {
+    if (!options) {
+      return;
+    }
+
+    if (options.intent === targetIntent && options.vault === targetVault) {
+      return;
+    }
+
+    console.log('[PayPal] Updating script options', {
+      previousIntent: options.intent,
+      nextIntent: targetIntent,
+      previousVault: options.vault,
+      nextVault: targetVault,
+    });
+
+    dispatch({
+      type: 'resetOptions',
+      value: {
+        ...options,
+        intent: targetIntent,
+        vault: targetVault,
+      },
+    });
+  }, [dispatch, options, targetIntent, targetVault]);
 
   const handleRequireAuth = useCallback(async () => {
     if (onRequireAuth) {

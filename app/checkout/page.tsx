@@ -1,7 +1,11 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { PayPalButtons, PayPalButtonsComponentProps } from '@paypal/react-paypal-js';
+import {
+  PayPalButtons,
+  PayPalButtonsComponentProps,
+  usePayPalScriptReducer,
+} from '@paypal/react-paypal-js';
 import type { BillingType, PlanId } from '@/constants/billing';
 import {
   PLAN_IDS,
@@ -122,10 +126,36 @@ interface PayPalButtonProps {
 
 const PayPalButton: React.FC<PayPalButtonProps> = ({ planId, billingCycle }) => {
   const { token, loading } = useAuthToken();
+  const [{ options }, dispatch] = usePayPalScriptReducer();
   const [status, setStatus] = useState<PaymentStatus>('idle');
   const [error, setError] = useState<string | null>(null);
 
   const amount = PLAN_PRICING[planId][billingCycle].price;
+
+  React.useEffect(() => {
+    if (!options) {
+      return;
+    }
+    if (options.intent === 'subscription' && options.vault === true) {
+      return;
+    }
+
+    console.log('[Checkout] Resetting PayPal script options for subscriptions', {
+      previousIntent: options.intent,
+      nextIntent: 'subscription',
+      previousVault: options.vault,
+      nextVault: true,
+    });
+
+    dispatch({
+      type: 'resetOptions',
+      value: {
+        ...options,
+        intent: 'subscription',
+        vault: true,
+      },
+    });
+  }, [dispatch, options]);
 
   const createSubscription = useCallback<
     NonNullable<PayPalButtonsComponentProps['createSubscription']>
