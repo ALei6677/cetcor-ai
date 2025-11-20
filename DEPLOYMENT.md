@@ -1,6 +1,6 @@
 # 🚀 网站发布指南
 
-本文档详细说明了如何将 Cetcor.AI 图片生成平台发布到生产环境。
+本文档详细说明了如何将 Cetcor AI 图片生成平台发布到生产环境。
 
 ## 📋 发布前准备清单
 
@@ -21,6 +21,12 @@
 SEEDREAM_API_KEY=your_api_key_here
 SEEDREAM_API_ENDPOINT=https://ark.cn-beijing.volces.com/api/v3/images/generations
 SEEDREAM_MODEL=doubao-seedream-4-0-250828
+```
+
+如果需要开启 PayPal 一次性支付，请在部署平台额外配置 `PAYPAL_ONETIME_BUTTONS`，并且仅保留 Pro 与 Max 的按钮 ID（Basic 套餐的一次性支付已下线）：
+
+```env
+PAYPAL_ONETIME_BUTTONS={"pro":"PRO_HOSTED_BUTTON_ID","max":"MAX_HOSTED_BUTTON_ID"}
 ```
 
 **重要提示：**

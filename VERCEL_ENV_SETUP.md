@@ -14,6 +14,24 @@
 |--------|------|--------|
 | `SEEDREAM_API_ENDPOINT` | API 端点地址 | `https://ark.cn-beijing.volces.com/api/v3/images/generations` |
 | `SEEDREAM_MODEL` | API 模型名称 | `doubao-seedream-4-0-250828` |
+| `PAYPAL_PLAN_MAPPING` | PayPal 订阅计划映射（JSON 字符串） | 见下方示例 |
+
+#### PAYPAL_PLAN_MAPPING 示例
+
+```
+{
+  "monthly": {
+    "basic": "P-11U5718285742053WNEOHLGY",
+    "pro": "P-9LY09418ED5289138NEOHQTA",
+    "max": "P-6W150488WW857202PNEOHSNY"
+  },
+  "yearly": {
+    "basic": "P-5BS562283P586814ENEOHOXY",
+    "pro": "P-0T1494965C620674FNEOHTXI",
+    "max": "P-0J454073AR074815PNEOHTJA"
+  }
+}
+```
 
 ## 🔧 配置步骤
 

@@ -1,210 +1,157 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { SIZE_OPTIONS, MAX_IMAGES_OPTIONS } from '@/constants/api.constants';
-import { useTranslation } from '@/stores/language-store';
-import { useHistoryStore } from '@/stores/history-store';
-import type { ISeedreamResponse } from '@/types/seedream.types';
-import { Loader2 } from 'lucide-react';
+import type { IGenerationFormData, ISeedreamResponse } from '@/types/seedream.types';
+import { getStoredAuthToken, useAuthToken } from '@/components/providers/auth-provider';
 
-/**
- * 表单验证Schema
- */
-const formSchema = z.object({
-  prompt: z.string().min(1, '请输入提示词').max(1000, '提示词不能超过1000个字符'),
-  size: z.string(),
-  maxImages: z.number().min(1).max(6),
-  watermark: z.boolean(),
-});
-
-type FormData = z.infer<typeof formSchema>;
-
-/**
- * GenerationForm组件Props
- */
-interface IGenerationFormProps {
-  /** 生成成功回调，包含结果和提示词 */
-  onGenerateSuccess?: (result: ISeedreamResponse, prompt: string) => void;
-  /** 生成失败回调 */
-  onGenerateError?: (error: string) => void;
+interface GenerationFormProps {
+  onGenerateSuccess: (result: ISeedreamResponse, prompt?: string) => void;
+  onGenerateError: (error: string) => void;
+  initialPrompt?: string;
 }
 
-/**
- * 图片生成表单组件
- * 提供提示词输入、参数选择和生成功能
- */
-export function GenerationForm({ onGenerateSuccess, onGenerateError }: IGenerationFormProps) {
-  const t = useTranslation();
-  const addHistoryItem = useHistoryStore((state) => state.addItem);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  // 初始化表单
-  const {
-    register,
-    handleSubmit,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      prompt: '',
-      size: '2k',
-      maxImages: 3,
-      watermark: true,
-    },
+export const GenerationForm: React.FC<GenerationFormProps> = ({
+  onGenerateSuccess,
+  onGenerateError,
+  initialPrompt = '',
+}) => {
+  const { token } = useAuthToken();
+  const [formData, setFormData] = useState<IGenerationFormData>({
+    prompt: initialPrompt,
+    size: '2k',
+    maxImages: 3,
+    watermark: true,
   });
+  const [loading, setLoading] = useState(false);
 
-  const size = watch('size');
-  const maxImages = watch('maxImages');
+  type FormElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
-  /**
-   * 处理表单提交
-   * @param data - 表单数据
-   */
-  const onSubmit = async (data: FormData) => {
-    setIsGenerating(true);
+  const handleChange =
+    (field: keyof IGenerationFormData) =>
+    (e: React.ChangeEvent<FormElement>) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]:
+          field === 'maxImages'
+            ? Number(e.target.value)
+            : field === 'watermark'
+            ? (e as React.ChangeEvent<HTMLInputElement>).target.checked
+            : e.target.value,
+      }));
+    };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.prompt.trim()) {
+      onGenerateError('提示词不能为空');
+      return;
+    }
+
+    setLoading(true);
     try {
-      // 调用API生成图片
-      const response = await fetch('/api/generate', {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      const resolvedToken = token ?? getStoredAuthToken();
+      if (!resolvedToken) {
+        onGenerateError('请先登录后再生成图片。');
+        return;
+      }
+
+      headers.Authorization = `Bearer ${resolvedToken}`;
+
+      const res = await fetch('/api/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
-          prompt: data.prompt,
-          size: data.size,
-          maxImages: data.maxImages,
-          watermark: data.watermark,
+          prompt: formData.prompt,
+          size: formData.size,
+          maxImages: formData.maxImages,
+          watermark: formData.watermark,
         }),
       });
 
-      const result = await response.json();
+      const data = await res.json();
 
-      if (!result.success) {
-        throw new Error(result.error || '生成失败');
+      if (!res.ok || !data.success) {
+        onGenerateError(data.error || '生成失败，请稍后重试');
+        return;
       }
 
-      // 提取图片URL
-      const images = result.data.data
-        .map((img: any) => img.url)
-        .filter((url: string) => url);
-
-      // 添加到历史记录
-      addHistoryItem({
-        prompt: data.prompt,
-        images,
-        params: {
-          size: data.size,
-          max_images: data.maxImages,
-          watermark: data.watermark,
-        },
-      });
-
-      // 触发成功回调，传递结果和提示词
-      onGenerateSuccess?.(result.data, data.prompt);
-
+      onGenerateSuccess(data.data as ISeedreamResponse, formData.prompt);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '生成失败';
-      onGenerateError?.(errorMessage);
+      console.error('generate error:', error);
+      onGenerateError('生成失败，请稍后重试');
     } finally {
-      setIsGenerating(false);
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-3xl mx-auto space-y-6">
-      {/* 提示词输入 */}
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="prompt">{t.form.promptLabel}</Label>
-        <Textarea
-          id="prompt"
-          placeholder={t.form.promptPlaceholder}
-          rows={4}
-          {...register('prompt')}
-          className="resize-none"
+        <label className="text-sm font-medium text-slate-900">提示词</label>
+        <textarea
+          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          rows={3}
+          value={formData.prompt}
+          onChange={handleChange('prompt')}
+          placeholder="请输入你想生成的图片描述..."
         />
-        {errors.prompt && (
-          <p className="text-sm text-red-500">{errors.prompt.message}</p>
-        )}
       </div>
 
-      {/* 参数选择 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* 尺寸选择 */}
+      <div className="grid gap-4 md:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor="size">{t.form.sizeLabel}</Label>
-          <Select
-            value={size}
-            onValueChange={(value) => setValue('size', value)}
+          <label className="text-sm font-medium text-slate-900" htmlFor="size-select">
+            尺寸
+          </label>
+          <select
+            id="size-select"
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            value={formData.size}
+            onChange={handleChange('size')}
           >
-            <SelectTrigger id="size">
-              <SelectValue placeholder="选择尺寸" />
-            </SelectTrigger>
-            <SelectContent>
-              {SIZE_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label} - {option.description}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <option value="1k">1K</option>
+            <option value="2k">2K</option>
+            <option value="4k">4K</option>
+          </select>
         </div>
 
-        {/* 生成数量 */}
         <div className="space-y-2">
-          <Label htmlFor="maxImages">
-            {t.form.maxImages} ({t.form.maxImagesLabel})
-          </Label>
-          <Select
-            value={maxImages.toString()}
-            onValueChange={(value) => setValue('maxImages', parseInt(value))}
-          >
-            <SelectTrigger id="maxImages">
-              <SelectValue placeholder="选择数量" />
-            </SelectTrigger>
-            <SelectContent>
-              {MAX_IMAGES_OPTIONS.map((num) => (
-                <SelectItem key={num} value={num.toString()}>
-                  {num} {t.form.maxImagesUnit}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <label className="text-sm font-medium text-slate-900" htmlFor="max-images">
+            张数
+          </label>
+          <input
+            id="max-images"
+            type="number"
+            min={1}
+            max={6}
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            value={formData.maxImages}
+            onChange={handleChange('maxImages')}
+          />
+        </div>
+
+        <div className="flex items-end gap-2">
+          <label className="flex items-center gap-2 text-sm text-slate-900">
+            <input
+              type="checkbox"
+              checked={formData.watermark}
+              onChange={handleChange('watermark')}
+              className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/40"
+            />
+            添加水印
+          </label>
         </div>
       </div>
 
-      {/* 生成按钮 */}
-      <Button
-        type="submit"
-        size="lg"
-        className="w-full"
-        disabled={isGenerating}
-      >
-        {isGenerating ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            {t.form.generating}
-          </>
-        ) : (
-          t.form.generateButton
-        )}
+      <Button type="submit" disabled={loading} className="mt-2">
+        {loading ? '生成中...' : '生成图片'}
       </Button>
     </form>
   );
-}
+};
+
 

@@ -87,7 +87,6 @@ body {
 /* 滚动性能优化 */
 html {
   scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
 }
 
 /* 优化GPU加速的元素 */
@@ -95,5 +94,30 @@ html {
   .gpu-accelerated {
     transform: translateZ(0);
     will-change: transform;
+  }
+  
+  .contain-layout {
+    contain: layout style paint;
+  }
+}
+
+/* PayPal 按钮响应式样式 */
+.paypal-button-container {
+  width: 100%;
+  min-height: 50px;
+}
+
+.paypal-button-container > div {
+  width: 100% !important;
+}
+
+/* 确保 PayPal 按钮在移动端正常显示 */
+@media (max-width: 640px) {
+  .paypal-button-container {
+    min-height: 45px;
+  }
+  
+  .paypal-button-container iframe {
+    max-width: 100% !important;
   }
 }

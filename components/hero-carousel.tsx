@@ -79,19 +79,22 @@ export function HeroCarousel({ images = SAMPLE_IMAGES }: IHeroCarouselProps) {
   /**
    * 监听选中变化
    */
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    setSelectedIndex(emblaApi.selectedScrollSnap());
-  }, [emblaApi]);
-
   useEffect(() => {
     if (!emblaApi) return;
-    onSelect();
-    emblaApi.on('select', onSelect);
-    return () => {
-      emblaApi.off('select', onSelect);
+
+    const handleSelect = () => {
+      setSelectedIndex(emblaApi.selectedScrollSnap());
     };
-  }, [emblaApi, onSelect]);
+
+    handleSelect();
+    emblaApi.on('select', handleSelect);
+    emblaApi.on('reInit', handleSelect);
+
+    return () => {
+      emblaApi.off('select', handleSelect);
+      emblaApi.off('reInit', handleSelect);
+    };
+  }, [emblaApi]);
 
   return (
     <div className="relative w-full max-w-5xl mx-auto py-12">
