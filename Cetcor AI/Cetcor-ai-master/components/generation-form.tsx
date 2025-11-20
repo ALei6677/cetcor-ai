@@ -25,9 +25,11 @@ export const GenerationForm: React.FC<GenerationFormProps> = ({
   });
   const [loading, setLoading] = useState(false);
 
+  type FormElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+
   const handleChange =
     (field: keyof IGenerationFormData) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    (e: React.ChangeEvent<FormElement>) => {
       setFormData((prev) => ({
         ...prev,
         [field]:

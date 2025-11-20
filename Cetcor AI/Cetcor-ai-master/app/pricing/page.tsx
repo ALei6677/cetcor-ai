@@ -39,10 +39,22 @@ export default function PricingPage() {
   const t = useTranslation();
   const router = useRouter();
 
-  const billingOptions = BILLING_CYCLE_IDS.map((id) => ({
-    id,
-    ...t.pricing.billingOptions[id],
-  }));
+  const billingOptions: Array<{
+    id: BillingCycle;
+    label: string;
+    helper?: string;
+  }> = BILLING_CYCLE_IDS.map((id) => {
+    const option = t.pricing.billingOptions[id] as {
+      label: string;
+      helper?: string;
+    };
+
+    return {
+      id,
+      label: option.label,
+      helper: option.helper,
+    };
+  });
 
   const plans = t.pricing.plans as Plan[];
   const visiblePlans = useMemo(() => {

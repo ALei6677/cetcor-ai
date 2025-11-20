@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -41,11 +42,16 @@ export function ImagePreviewDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="px-6 pb-6 flex items-center justify-center bg-gray-50 rounded-b-lg">
-          <img
-            src={imageUrl}
-            alt={title || '预览图片'}
-            className="max-w-full max-h-[70vh] object-contain rounded-lg"
-          />
+          <div className="relative w-full max-w-4xl h-[70vh]">
+            <Image
+              src={imageUrl}
+              alt={title || '预览图片'}
+              fill
+              sizes="(min-width: 1024px) 800px, 90vw"
+              className="object-contain rounded-lg"
+              unoptimized
+            />
+          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
+import Image from 'next/image';
 import { Label } from '@/components/ui/label';
 import { ImagePreviewDialog } from './image-preview-dialog';
 import { Upload, X, Eye } from 'lucide-react';
@@ -173,10 +174,13 @@ export function ReferenceImageUpload({
             key={image.id}
             className="relative group w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50 flex-shrink-0"
           >
-            <img
+            <Image
               src={image.url}
               alt={image.name}
-              className="w-full h-full object-cover"
+              fill
+              sizes="96px"
+              className="object-cover"
+              unoptimized
             />
             
             {/* 操作按钮遮罩 */}

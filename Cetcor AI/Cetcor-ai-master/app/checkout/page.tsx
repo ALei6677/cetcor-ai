@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { PayPalButtons, PayPalButtonsComponentProps } from '@paypal/react-paypal-js';
 import type { BillingType, PlanId } from '@/constants/billing';
 import {
