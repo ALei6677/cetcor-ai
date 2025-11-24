@@ -21,7 +21,12 @@ export function CreditsSummary({ className = '', size = 'default' }: CreditsSumm
   const [summary, setSummary] = useState<SubscriptionSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isHydrated] = useState(() => typeof window !== 'undefined');
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Track when component has mounted on client to avoid hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!supabaseBrowserClient || !token) {
@@ -38,7 +43,7 @@ export function CreditsSummary({ className = '', size = 'default' }: CreditsSumm
       return;
     }
 
-    let isMounted = true;
+    let isEffectMounted = true;
     startTransition(() => {
       setLoading(true);
     });
@@ -53,7 +58,7 @@ export function CreditsSummary({ className = '', size = 'default' }: CreditsSumm
     latestSubscriptionPromise
       .then(
         ({ data, error: queryError }) => {
-          if (!isMounted) return;
+          if (!isEffectMounted) return;
           if (queryError) {
             console.error('获取订阅信息失败:', queryError);
             startTransition(() => {
@@ -80,7 +85,7 @@ export function CreditsSummary({ className = '', size = 'default' }: CreditsSumm
         }
       )
       .then(() => {
-        if (isMounted) {
+        if (isEffectMounted) {
           startTransition(() => {
             setLoading(false);
           });
@@ -88,7 +93,7 @@ export function CreditsSummary({ className = '', size = 'default' }: CreditsSumm
       });
 
     return () => {
-      isMounted = false;
+      isEffectMounted = false;
     };
   }, [token]);
 
@@ -102,7 +107,8 @@ export function CreditsSummary({ className = '', size = 'default' }: CreditsSumm
   const valueSize = size === 'compact' ? 'text-2xl' : 'text-3xl';
   const descriptionSize = size === 'compact' ? 'text-xs' : 'text-sm';
 
-  const isAuthenticated = isHydrated && Boolean(token);
+  // Only show authenticated state after component has mounted to avoid hydration mismatch
+  const isAuthenticated = isMounted && Boolean(token);
   const stateIcon = (() => {
     if (loading || authLoading) {
       return <Loader2 className="h-5 w-5 animate-spin text-blue-600" />;

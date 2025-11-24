@@ -77,8 +77,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await getUserFromRequest(request);
-    log('User resolved', { hasUser: !!user, userId: user?.id });
+    let user;
+    try {
+      user = await getUserFromRequest(request);
+      log('User resolved', { hasUser: !!user, userId: user?.id });
+    } catch (authError) {
+      logError('Failed to get user from request', authError);
+      return NextResponse.json(
+        { error: '用户认证失败，请重新登录' },
+        { status: 401 }
+      );
+    }
 
     if (!user) {
       return NextResponse.json({ error: '未登录或 token 无效' }, { status: 401 });
@@ -106,13 +115,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '订阅仅支持月付或年付' }, { status: 400 });
     }
 
-    const paypalPlanId = getPaypalPlanId(planId, billingType);
-    log('Resolved PayPal plan mapping', { paypalPlanId });
+    let paypalPlanId: string | null = null;
+    try {
+      paypalPlanId = getPaypalPlanId(planId, billingType);
+      log('Resolved PayPal plan mapping', { paypalPlanId });
+    } catch (mappingError) {
+      logError('Failed to get PayPal plan ID', mappingError, {
+        planId,
+        billingType,
+      });
+      return NextResponse.json(
+        { error: '获取 PayPal 套餐 ID 失败，请检查配置' },
+        { status: 500 }
+      );
+    }
 
     if (!paypalPlanId) {
       logError('Missing PayPal plan ID mapping', null, {
         planId,
         billingType,
+        hasEnvMapping: !!process.env.PAYPAL_PLAN_MAPPING,
       });
       return NextResponse.json(
         { error: 'PayPal 套餐未在配置中映射，请检查 PAYPAL_PLAN_MAPPING' },
@@ -130,14 +152,26 @@ export async function POST(request: NextRequest) {
       cancelUrl,
     });
 
-    const subscription = await createPaypalSubscription(
-      paypalPlanId,
-      successUrl,
-      cancelUrl,
-      {
-        subscriberEmail: user.email ?? undefined,
-      }
-    );
+    let subscription;
+    try {
+      subscription = await createPaypalSubscription(
+        paypalPlanId,
+        successUrl,
+        cancelUrl,
+        {
+          subscriberEmail: user.email ?? undefined,
+        }
+      );
+    } catch (paypalError) {
+      logError('PayPal subscription creation failed', paypalError, {
+        paypalPlanId,
+        userId: user.id,
+      });
+      return NextResponse.json(
+        { error: 'PayPal 订阅创建失败，请检查 PayPal 配置或稍后重试' },
+        { status: 500 }
+      );
+    }
 
     log('PayPal subscription API response', {
       subscriptionId: subscription.id,
@@ -204,10 +238,18 @@ export async function POST(request: NextRequest) {
     logError('Unexpected error while creating subscription', error);
     if (error instanceof Error) {
       logError('Error stack trace', error.stack);
+      logError('Error message', error.message);
+      logError('Error name', error.name);
     }
 
+    // 提供更详细的错误信息用于调试
+    const errorMessage =
+      error instanceof Error
+        ? `创建订阅失败: ${error.message}`
+        : '创建订阅失败，请稍后重试';
+
     return NextResponse.json(
-      { error: '创建订阅失败，请稍后重试' },
+      { error: errorMessage },
       { status: 500 }
     );
   } finally {

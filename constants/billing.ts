@@ -103,6 +103,28 @@ export const getPaypalPlanId = (planId: PlanId, billingType: BillingType): strin
   return mapping[billingType]?.[planId] ?? null;
 };
 
+/**
+ * 从 PayPal plan_id 反向查找我们的 planId 和 billingType
+ * @param paypalPlanId PayPal 的 plan ID
+ * @returns 如果找到，返回 { planId, billingType }，否则返回 null
+ */
+export const getPlanIdFromPaypalPlanId = (
+  paypalPlanId: string
+): { planId: PlanId; billingType: BillingType } | null => {
+  const mapping = getPaypalPlanMapping();
+  if (!mapping) return null;
+
+  for (const billingType of BILLING_TYPES) {
+    for (const planId of PLAN_IDS) {
+      if (mapping[billingType]?.[planId] === paypalPlanId) {
+        return { planId, billingType };
+      }
+    }
+  }
+
+  return null;
+};
+
 let hasWarnedDeprecatedOneTimePlan = false;
 
 export const getPaypalHostedButtonMapping = (): Record<OneTimePlanId, string> | null => {

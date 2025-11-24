@@ -227,6 +227,36 @@ export async function getPaypalSubscriptionDetails(subscriptionId: string) {
   return json as { id: string; status: string; plan_id?: string };
 }
 
+export async function getPaypalOrderDetails(orderId: string) {
+  const token = await getAccessToken();
+
+  const res = await fetch(`${PAYPAL_BASE}/v2/checkout/orders/${orderId}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    console.error('Fetch PayPal order failed:', json);
+    throw new Error('获取 PayPal 订单详情失败');
+  }
+
+  return json as {
+    id: string;
+    status: string;
+    purchase_units?: Array<{
+      amount?: {
+        value?: string;
+        currency_code?: string;
+      };
+    }>;
+  };
+}
+
 /**
  * 调用 PayPal 的 Webhook 签名验证接口，验证本次回调是否合法
  */

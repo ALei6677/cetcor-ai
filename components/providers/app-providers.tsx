@@ -98,7 +98,8 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         intent: 'capture',
         currency: 'USD',
         components: 'buttons',
-        enableFunding: 'paylater,venmo,card',
+        // 移除 enableFunding，让 PayPal 根据用户地区自动显示所有可用的支付方式
+        // 这样中国用户可以看到 PayPal 账户余额、银行卡等选项
         dataSdkIntegrationSource: 'button-factory',
         vault: true,
       }}

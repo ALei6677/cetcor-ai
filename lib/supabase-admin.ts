@@ -33,19 +33,27 @@ export const supabaseAdmin =
 export async function getUserFromRequest(request: Request) {
   if (!supabaseAdmin) return null;
 
-  const authHeader = request.headers.get('authorization') ?? request.headers.get('Authorization');
-  if (!authHeader?.toLowerCase().startsWith('bearer ')) {
+  try {
+    const authHeader = request.headers.get('authorization') ?? request.headers.get('Authorization');
+    if (!authHeader?.toLowerCase().startsWith('bearer ')) {
+      return null;
+    }
+
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      return null;
+    }
+
+    const { data, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !data.user) {
+      return null;
+    }
+
+    return data.user;
+  } catch (error) {
+    console.error('[supabase-admin] Error getting user from request:', error);
     return null;
   }
-
-  const token = authHeader.split(' ')[1];
-
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
-  if (error || !data.user) {
-    return null;
-  }
-
-  return data.user;
 }
 
 
