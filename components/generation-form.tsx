@@ -264,6 +264,42 @@ export const GenerationForm: React.FC<GenerationFormProps> = ({
   // 控制宽高是否联动：联动时修改一侧，另一侧按当前比例自动调整
   const [dimensionsLinked, setDimensionsLinked] = useState(true);
 
+  const applyReferenceImages = React.useCallback(
+    (prev: IGenerationFormData, images: IReferenceImageInput[]): IGenerationFormData => {
+      let nextState: IGenerationFormData = {
+        ...prev,
+        referenceImages: images,
+      };
+
+      if (images.length > 0) {
+        const latestImage = [...images].reverse().find((img) => img.width && img.height);
+        const closestAspect = findClosestAspectRatioId(latestImage?.width, latestImage?.height);
+        if (closestAspect) {
+          const { width, height } = calculateDimensions(prev.resolution, closestAspect);
+          nextState = {
+            ...nextState,
+            aspectRatio: closestAspect,
+            width,
+            height,
+            size: `${width}x${height}`,
+          };
+        }
+      } else {
+        nextState = {
+          ...nextState,
+          resolution: defaultResolution,
+          aspectRatio: defaultAspect,
+          width: defaultWidth,
+          height: defaultHeight,
+          size: `${defaultWidth}x${defaultHeight}`,
+        };
+      }
+
+      return nextState;
+    },
+    [defaultAspect, defaultHeight, defaultResolution, defaultWidth]
+  );
+
   /**
    * 当外层通过“灵感创意”等方式更新 initialPrompt 时，
    * 将新的提示词同步到表单中（不影响已经通过 editMetadata 回填的场景）
@@ -336,42 +372,6 @@ export const GenerationForm: React.FC<GenerationFormProps> = ({
   }, [editMetadata, applyReferenceImages, formData]);
 
   type FormElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-
-  const applyReferenceImages = React.useCallback(
-    (prev: IGenerationFormData, images: IReferenceImageInput[]): IGenerationFormData => {
-      let nextState: IGenerationFormData = {
-      ...prev,
-      referenceImages: images,
-      };
-
-      if (images.length > 0) {
-        const latestImage = [...images].reverse().find((img) => img.width && img.height);
-        const closestAspect = findClosestAspectRatioId(latestImage?.width, latestImage?.height);
-        if (closestAspect) {
-          const { width, height } = calculateDimensions(prev.resolution, closestAspect);
-          nextState = {
-            ...nextState,
-            aspectRatio: closestAspect,
-            width,
-            height,
-            size: `${width}x${height}`,
-          };
-        }
-      } else {
-        nextState = {
-          ...nextState,
-          resolution: defaultResolution,
-          aspectRatio: defaultAspect,
-          width: defaultWidth,
-          height: defaultHeight,
-          size: `${defaultWidth}x${defaultHeight}`,
-        };
-      }
-
-      return nextState;
-    },
-    [defaultAspect, defaultHeight, defaultResolution, defaultWidth]
-  );
 
   const handleReferenceImagesChange = (images: IReferenceImageInput[]) => {
     setFormData((prev) => applyReferenceImages(prev, images));
@@ -834,7 +834,7 @@ export const GenerationForm: React.FC<GenerationFormProps> = ({
                 >
                   <span className="text-sm text-slate-500">{t.form.styleLabel}</span>
                   <span className="text-sm font-semibold text-slate-900">
-                    {t.form.styles?.[formData.style] ||
+                    {((t.form.styles as Record<string, string> | undefined)?.[formData.style]) ||
                       STYLE_OPTIONS.find((option) => option.id === formData.style)?.label ||
                       t.form.styleNone}
                   </span>
@@ -845,7 +845,8 @@ export const GenerationForm: React.FC<GenerationFormProps> = ({
                     {/* 提升风格菜单层级，确保交互可见 */}
                     <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
                       {STYLE_OPTIONS.map((style) => {
-                        const label = t.form.styles?.[style.id] ?? style.label;
+                        const stylesMap = t.form.styles as Record<string, string> | undefined;
+                        const label = stylesMap?.[style.id] ?? style.label;
                         return (
                         <button
                           key={style.id}
