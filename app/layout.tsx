@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerHandler } from "@/components/service-worker-handler";
 import { AppProviders } from "@/components/providers/app-providers";
+import { FooterLinks } from "@/components/footer-links";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +37,13 @@ export default function RootLayout({
         {...bodyHydrationFix}
       >
         <ServiceWorkerHandler />
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          {children}
+          {/* Footer links: extracted to client component to support language switch */}
+          <footer className="mt-10 flex items-center justify-end gap-6 pl-4 pr-24 pb-6 text-sm text-slate-600">
+            <FooterLinks />
+          </footer>
+        </AppProviders>
       </body>
     </html>
   );

@@ -1,52 +1,60 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import React, { useRef, useState } from 'react';
-import Image from 'next/image';
+import React, { useRef } from 'react';
 import { Label } from '@/components/ui/label';
-import { ImagePreviewDialog } from './image-preview-dialog';
-import { Upload, X, Eye } from 'lucide-react';
+import { Upload, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/stores/language-store';
-
-/**
- * 参考图数据接口
- */
-export interface ReferenceImage {
-  /** 图片的唯一标识 */
-  id: string;
-  /** 图片的 data URL（base64） */
-  url: string;
-  /** 原始文件名 */
-  name: string;
-  /** 文件大小（字节） */
-  size: number;
-}
+import type { IReferenceImageInput } from '@/types/seedream.types';
+import { cn } from '@/lib/utils';
 
 /**
  * 参考图上传组件Props
  */
+type ReferenceImageUploadVariant = 'default' | 'embedded';
+
 interface ReferenceImageUploadProps {
   /** 已上传的参考图列表 */
-  images: ReferenceImage[];
+  images: IReferenceImageInput[];
   /** 图片变化回调 */
-  onChange: (images: ReferenceImage[]) => void;
+  onChange: (images: IReferenceImageInput[]) => void;
   /** 最大上传数量（默认5） */
   maxImages?: number;
+  /** 自定义标签 */
+  label?: string;
+  /** 自定义提示 */
+  hint?: string;
+  /** 是否隐藏标签 */
+  hideLabel?: boolean;
+  /** 是否隐藏提示 */
+  hideHint?: boolean;
+  /** 紧凑模式，减少上下留白 */
+  compact?: boolean;
+  /** 自定义容器类名 */
+  className?: string;
+  /** 嵌入模式，用于提示词输入框内部展示 */
+  variant?: ReferenceImageUploadVariant;
 }
 
 /**
  * 参考图上传组件
  * - 支持多文件上传（最多5张）
  * - 显示缩略图，依次往右排列
- * - 每个缩略图有预览和删除按钮
  */
 export function ReferenceImageUpload({
   images,
   onChange,
   maxImages = 5,
+  label,
+  hint,
+  hideLabel,
+  hideHint,
+  compact,
+  className,
+  variant = 'default',
 }: ReferenceImageUploadProps) {
   const t = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   /**
    * 将文件转换为 base64 data URL
@@ -57,6 +65,15 @@ export function ReferenceImageUpload({
       reader.onload = () => resolve(reader.result as string);
       reader.onerror = reject;
       reader.readAsDataURL(file);
+    });
+  };
+
+  const getImageDimensions = (dataUrl: string): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.width, height: img.height });
+      img.onerror = reject;
+      img.src = dataUrl;
     });
   };
 
@@ -106,15 +123,27 @@ export function ReferenceImageUpload({
       }
     }
 
-    // 转换为 ReferenceImage 格式
-    const newImages: ReferenceImage[] = await Promise.all(
+    // 转换为 IReferenceImageInput 格式
+    const newImages: IReferenceImageInput[] = await Promise.all(
       validFiles.map(async (file) => {
         const url = await fileToDataURL(file);
+        let width: number | undefined;
+        let height: number | undefined;
+        try {
+          const dims = await getImageDimensions(url);
+          width = dims.width;
+          height = dims.height;
+        } catch {
+          width = undefined;
+          height = undefined;
+        }
         return {
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           url,
           name: file.name,
           size: file.size,
+          width,
+          height,
         };
       })
     );
@@ -128,41 +157,49 @@ export function ReferenceImageUpload({
   };
 
   /**
-   * 删除图片
+   * 处理删除图片
    */
-  const handleRemove = (id: string) => {
-    onChange(images.filter((img) => img.id !== id));
+  const handleDelete = (imageId: string) => {
+    onChange(images.filter((img) => img.id !== imageId));
   };
 
-  /**
-   * 打开预览
-   */
-  const handlePreview = (url: string) => {
-    setPreviewImage(url);
-  };
-
-  /**
-   * 关闭预览
-   */
-  const handleClosePreview = () => {
-    setPreviewImage(null);
-  };
+  const isEmbedded = variant === 'embedded';
 
   return (
-    <div className="space-y-3">
-      <Label>{t.form.referenceImageLabel || '参考图（可选）'}</Label>
+    <div
+      className={cn(
+        'space-y-2 pt-1',
+        compact && 'space-y-1 pt-0',
+        isEmbedded && 'space-y-0 pt-0',
+        className
+      )}
+    >
+      {!hideLabel && (
+        <Label className="text-sm font-semibold text-slate-900">
+          {label || t.form.referenceImageLabel || '图片上传（可选）'}
+        </Label>
+      )}
       
       {/* 上传按钮和缩略图容器 */}
-      <div className="flex items-start gap-3 overflow-x-auto pb-1">
+      <div
+        className={cn(
+          'flex items-start gap-3 overflow-x-auto pb-1',
+          isEmbedded && 'flex-wrap overflow-visible pb-0'
+        )}
+      >
         {/* 上传按钮 */}
         {images.length < maxImages && (
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 bg-gray-50 hover:bg-blue-50 transition-colors flex flex-col items-center justify-center gap-1 flex-shrink-0"
+            className={cn(
+              'flex h-[120px] w-[120px] flex-shrink-0 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 text-slate-600 transition-colors hover:border-primary hover:bg-primary/5 sm:h-36 sm:w-36',
+              isEmbedded &&
+                'h-20 w-20 rounded-lg border border-dashed border-slate-300 bg-white/80 text-slate-500 sm:h-20 sm:w-20'
+            )}
           >
-            <Upload className="w-5 h-5 text-gray-400" />
-            <span className="text-xs text-gray-500 text-center px-1">
+            <Upload className={cn('h-9 w-9 text-slate-400', isEmbedded && 'h-7 w-7 text-slate-400')} />
+            <span className={cn('px-1 text-sm text-slate-500', isEmbedded && 'text-[11px]')}>
               {t.form.referenceImageUpload || '上传'}
             </span>
           </button>
@@ -172,36 +209,33 @@ export function ReferenceImageUpload({
         {images.map((image) => (
           <div
             key={image.id}
-            className="relative group w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50 flex-shrink-0"
+            className={cn(
+              'group relative flex h-[120px] w-[120px] flex-shrink-0 overflow-hidden rounded-xl bg-slate-900/70 sm:h-36 sm:w-36',
+              isEmbedded && 'h-20 w-20 rounded-lg sm:h-20 sm:w-20'
+            )}
           >
-            <Image
+            <img
               src={image.url}
               alt={image.name}
-              fill
-              sizes="96px"
-              className="object-cover"
-              unoptimized
+              className="h-full w-full object-cover"
+              loading="lazy"
             />
-            
-            {/* 操作按钮遮罩 */}
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => handlePreview(image.url)}
-                className="p-1.5 bg-white/90 hover:bg-white rounded-full transition-colors"
-                aria-label="预览图片"
-              >
-                <Eye className="w-4 h-4 text-gray-800" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleRemove(image.id)}
-                className="p-1.5 bg-red-500/90 hover:bg-red-600 rounded-full transition-colors"
-                aria-label="删除图片"
-              >
-                <X className="w-4 h-4 text-white" />
-              </button>
-            </div>
+            {/* 删除按钮 */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(image.id);
+              }}
+              className={cn(
+                'absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500/90 text-white shadow-md opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100',
+                isEmbedded && 'h-5 w-5 right-0.5 top-0.5'
+              )}
+              aria-label="删除图片"
+              title="删除图片"
+            >
+              <Trash2 className={cn('h-3.5 w-3.5', isEmbedded && 'h-3 w-3')} />
+            </button>
           </div>
         ))}
       </div>
@@ -219,18 +253,12 @@ export function ReferenceImageUpload({
       />
 
       {/* 提示文字 */}
-      <p className="text-xs text-muted-foreground">
-        {t.form.referenceImageHint?.replace('{max}', maxImages.toString()) ||
-          `最多可上传 ${maxImages} 张参考图，支持 JPG、PNG、WebP、GIF 格式，单张不超过 10MB`}
-      </p>
-
-      {/* 图片预览对话框 */}
-      {previewImage && (
-        <ImagePreviewDialog
-          imageUrl={previewImage}
-          open={!!previewImage}
-          onClose={handleClosePreview}
-        />
+      {!hideHint && !isEmbedded && (
+        <p className="text-xs text-muted-foreground">
+          {hint ||
+            t.form.referenceImageHint?.replace('{max}', maxImages.toString()) ||
+            `最多可上传 ${maxImages} 张参考图，支持 JPG、PNG、WebP、GIF 格式，单张不超过 10MB`}
+        </p>
       )}
     </div>
   );

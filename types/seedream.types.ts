@@ -6,8 +6,8 @@ export interface ISeedreamRequest {
   prompt: string;
   /** 参考图片URL数组（可选） */
   image?: string[];
-  /** 最大生成数量（客户端自定义字段） */
-  maxImages?: number;
+  /** 生成图片数量（传给底层模型用的 n 参数） */
+  n?: number;
   /** 是否启用序列化图片生成（API只接受 'auto' 或 'disabled'） */
   sequential_image_generation?: 'auto' | 'disabled';
   /** 序列化生成选项 */
@@ -17,7 +17,7 @@ export interface ISeedreamRequest {
   };
   /** 响应格式：url或b64_json */
   response_format?: 'url' | 'b64_json';
-  /** 图片尺寸（支持格式：'1k', '2k', '4k' 或像素格式 '1024x1024' 等） */
+  /** 图片尺寸（支持格式：'2k', '4k' 或像素格式 '1024x1024' 等） */
   size?: string;
   /** 是否使用流式响应 */
   stream?: boolean;
@@ -75,7 +75,6 @@ export interface IHistoryItem {
   /** 生成参数 */
   params: {
     size?: string;
-    max_images?: number;
     watermark?: boolean;
   };
 }
@@ -88,9 +87,62 @@ export interface IGenerationFormData {
   prompt: string;
   /** 图片尺寸 */
   size: string;
-  /** 最大生成数量 */
-  maxImages: number;
   /** 是否添加水印 */
   watermark: boolean;
+  /** 参考图片 */
+  referenceImages: IReferenceImageInput[];
+  /** 分辨率预设 */
+  resolution: '2k' | '4k';
+  /** 纵横比 */
+  aspectRatio: string;
+  /** 自定义宽度 */
+  width: number;
+  /** 自定义高度 */
+  height: number;
+  /** 生成风格 */
+  style: string;
+}
+
+/**
+ * 单次生成的总体信息
+ */
+export interface IGenerationMetadata {
+  prompt: string;
+  timestamp: number;
+  resolutionLabel: string;
+  aspectRatio: string;
+  width: number;
+  height: number;
+  style: string;
+  styleLabel: string;
+  hasReferenceImage: boolean;
+  referenceImageThumb?: string | null;
+}
+
+/**
+ * 生成历史记录项
+ */
+export interface IGenerationHistoryItem {
+  id: string;
+  images: string[];
+  metadata: IGenerationMetadata;
+}
+
+/**
+ * 前端使用的参考图结构
+ */
+export interface IReferenceImageInput {
+  /** 图片的唯一标识 */
+  id: string;
+  /** 图片的 data URL（base64） */
+  url: string;
+  /** 原始文件名 */
+  name: string;
+  /** 文件大小（字节） */
+  size: number;
+  /** 图片宽度（像素，可选） */
+  width?: number;
+  /** 图片高度（像素，可选） */
+  height?: number;
 }
 

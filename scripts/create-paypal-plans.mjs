@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import url from 'url';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);

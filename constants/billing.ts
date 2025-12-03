@@ -13,7 +13,7 @@ export const CREDIT_COST_PER_IMAGE = 2;
 export const FREE_PLAN_DAILY_CREDITS = 10;
 
 export const SUBSCRIPTION_PLAN_CREDITS: Record<PlanId, number> = {
-  basic: 240,
+  basic: 600,
   pro: 1200,
   max: 3600,
 };

@@ -55,7 +55,6 @@ if (paypalVars.length === 0) {
   console.log('未找到 PayPal/Supabase 相关变量');
 } else {
   paypalVars.forEach(({ key, value }) => {
-    const displayValue = value ? (value.length > 50 ? value.substring(0, 50) + '...' : value) : '[空值]';
     console.log(`${key}: ${value ? '✅ 已设置' : '❌ 空值'}`);
     if (value && value.length > 50) {
       console.log(`  值长度: ${value.length} 字符`);

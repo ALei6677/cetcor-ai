@@ -1,18 +1,17 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import React from 'react';
-import Image from 'next/image';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useHistoryStore } from '@/stores/history-store';
 import { useTranslation } from '@/stores/language-store';
-import { Trash2 } from 'lucide-react';
+import type { IGenerationHistoryItem } from '@/types/seedream.types';
+import { Download, Eye } from 'lucide-react';
 
 /**
  * HistoryDialog组件Props
@@ -22,15 +21,31 @@ interface IHistoryDialogProps {
   open: boolean;
   /** 关闭回调 */
   onClose: () => void;
+  /** 历史记录数据 */
+  history: IGenerationHistoryItem[];
 }
 
 /**
  * 历史记录弹窗组件
  * 显示用户的图片生成历史
  */
-export function HistoryDialog({ open, onClose }: IHistoryDialogProps) {
+export function HistoryDialog({ open, onClose, history }: IHistoryDialogProps) {
   const t = useTranslation();
-  const { items, removeItem, clearAll } = useHistoryStore();
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const handleDownload = async (imageUrl: string, index: number) => {
+    try {
+      const downloadUrl = `/api/download?url=${encodeURIComponent(imageUrl)}`;
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `history-image-${index + 1}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('download failed', error);
+      alert('下载失败，请稍后重试');
+    }
+  };
 
   /**
    * 格式化时间戳
@@ -42,15 +57,6 @@ export function HistoryDialog({ open, onClose }: IHistoryDialogProps) {
     return date.toLocaleString();
   };
 
-  /**
-   * 处理清空历史
-   */
-  const handleClearAll = () => {
-    if (confirm('确定要清空所有历史记录吗？')) {
-      clearAll();
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -60,76 +66,94 @@ export function HistoryDialog({ open, onClose }: IHistoryDialogProps) {
 
         {/* 历史记录列表 */}
         <div className="space-y-4">
-          {items.length === 0 ? (
+          {history.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
               {t.history.empty}
             </div>
           ) : (
-            items.map((item) => (
-              <div
-                key={item.id}
-                className="border rounded-lg p-4 space-y-3"
-              >
-                {/* 提示词和时间 */}
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="font-medium text-sm mb-1">{item.prompt}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {t.history.generatedAt} {formatTime(item.timestamp)}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeItem(item.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+            history.map((item) => (
+              <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
+                  <span>{formatTime(item.metadata.timestamp)}</span>
+                  {item.metadata.referenceImageThumb ? (
+                    <span className="relative flex h-20 items-center overflow-hidden rounded-md border border-primary/40 bg-white shadow-sm">
+                      <img
+                        src={item.metadata.referenceImageThumb}
+                        alt="参考图"
+                        className="h-full w-auto"
+                      />
+                      {/* 参考图预览按钮：悬停时显示，点击可放大预览参考图 */}
+                      <button
+                        type="button"
+                        className="absolute inset-0 flex items-center justify-center bg-black/35 opacity-0 transition-opacity duration-200 hover:opacity-100"
+                        onClick={() => setPreviewImage(item.metadata.referenceImageThumb || null)}
+                        aria-label="预览参考图"
+                      >
+                        <Eye className="h-4 w-4 text-white" />
+                      </button>
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-500">
+                      参考图 无
+                    </span>
+                  )}
+                  <span className="rounded-full bg-slate-50 px-3 py-1">{`比例 ${item.metadata.aspectRatio}`}</span>
+                  <span className="rounded-full bg-slate-50 px-3 py-1">{`分辨率 ${item.metadata.resolutionLabel}`}</span>
+                  <span className="rounded-full bg-slate-50 px-3 py-1">{`尺寸 ${item.metadata.width}×${item.metadata.height}px`}</span>
+                  <span className="rounded-full bg-slate-50 px-3 py-1">{`风格 ${item.metadata.styleLabel}`}</span>
                 </div>
 
-                {/* 生成的图片 */}
-                <div className="grid grid-cols-3 gap-2">
+                <p className="text-sm text-slate-800">{item.metadata.prompt}</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {item.images.map((imageUrl, index) => (
-                    <div
-                      key={index}
-                      className="relative aspect-square rounded overflow-hidden border bg-muted"
-                    >
-                      <Image
-                        src={imageUrl}
-                        alt={`History image ${index + 1}`}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 33vw, 25vw"
-                      />
+                    <div key={index} className="group relative overflow-hidden rounded-xl border bg-slate-50">
+                      <div className="flex max-h-[280px] w-full items-center justify-center">
+                        <img src={imageUrl} alt={`History image ${index + 1}`} className="max-h-[280px] w-auto" />
+                      </div>
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setPreviewImage(imageUrl)}
+                            className="flex items-center justify-center gap-2"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleDownload(imageUrl, index)}
+                            className="flex items-center justify-center gap-2"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   ))}
-                </div>
-
-                {/* 参数信息 */}
-                <div className="text-xs text-muted-foreground">
-                  {item.params.size && `尺寸: ${item.params.size}`}
-                  {item.params.max_images && ` | 数量: ${item.params.max_images}`}
                 </div>
               </div>
             ))
           )}
         </div>
 
-        {/* 底部操作 */}
-        <DialogFooter>
-          {items.length > 0 && (
-            <Button
-              variant="destructive"
-              onClick={handleClearAll}
-            >
-              {t.history.clear}
-            </Button>
-          )}
-          <Button variant="outline" onClick={onClose}>
-            {t.history.close}
-          </Button>
-        </DialogFooter>
       </DialogContent>
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>预览生成图片</DialogTitle>
+          </DialogHeader>
+          <div className="relative mt-2 w-full">
+            {previewImage && (
+              <div className="relative mx-auto flex max-h-[70vh] w-full items-center justify-center overflow-hidden rounded-2xl bg-black/5">
+                <img src={previewImage} alt="预览生成图片" className="max-h-[70vh] w-auto" />
+              </div>
+            )}
+          </div>
+      </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

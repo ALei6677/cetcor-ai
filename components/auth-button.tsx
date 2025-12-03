@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { supabaseBrowserClient } from '@/lib/supabase-browser';
 import {
   getAuthErrorMessage,
@@ -9,16 +9,17 @@ import {
   signUpWithPassword,
 } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useSubscriptionSummary } from '@/hooks/use-subscription-summary';
+import type { PlanId } from '@/constants/billing';
+import { useAuthToken } from '@/components/providers/auth-provider';
+import { Loader2, Wallet } from 'lucide-react';
+import { useTranslation } from '@/stores/language-store';
+import { formatTimeUntilReset } from '@/lib/utils';
+import { resolvePlanDisplayKey } from '@/lib/subscription';
+import { useRouter } from 'next/navigation';
 
 export const AuthButton: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -39,6 +40,7 @@ export const AuthButton: React.FC = () => {
     { email: 'cetcor-test-1@mailinator.com', password: 'Test123456!' },
     { email: 'cetcor-test-2@mailinator.com', password: 'Test123456!' },
   ];
+  const { accountMenu: accountT, auth: authT } = useTranslation();
 
   const generateTestEmail = () => {
     const randomId = Math.random().toString(36).substring(2, 10);
@@ -74,28 +76,6 @@ export const AuthButton: React.FC = () => {
       subscription.unsubscribe();
     };
   }, [syncToken]);
-
-  const handleSignIn = async () => {
-    if (!supabaseBrowserClient) {
-      alert('认证功能未配置，请联系管理员。');
-      return;
-    }
-    setLoading(true);
-    try {
-      const { error } = await supabaseBrowserClient.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: typeof window !== 'undefined' ? window.location.href : undefined,
-        },
-      });
-      if (error) {
-        console.error('登录失败:', error);
-        alert('登录失败，请稍后重试。');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSignOut = async () => {
     if (!supabaseBrowserClient) return;
@@ -256,7 +236,8 @@ export const AuthButton: React.FC = () => {
   if (!sessionChecked) {
     return (
       <Button variant="outline" size="sm" disabled>
-        ...
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        {accountT.loading}
       </Button>
     );
   }
@@ -264,18 +245,15 @@ export const AuthButton: React.FC = () => {
   if (!userEmail) {
     return (
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={handleSignIn} disabled={loading}>
-          {loading ? '登录中...' : '使用 Google 登录'}
-        </Button>
         <Dialog open={emailDialogOpen} onOpenChange={handleEmailDialogChange}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
-              邮箱登录
+              {authT.emailLogin}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle>邮箱登录</DialogTitle>
+              <DialogTitle>{authT.emailLogin}</DialogTitle>
               <DialogDescription>
                 {isPasswordLogin ? '使用邮箱和密码快速登录或注册' : '我们将发送登录链接到您的邮箱'}
               </DialogDescription>
@@ -474,14 +452,174 @@ export const AuthButton: React.FC = () => {
     );
   }
 
+  return <UserAccountMenu email={userEmail} onSignOut={handleSignOut} signOutLoading={loading} />;
+};
+
+interface UserAccountMenuProps {
+  email: string;
+  onSignOut: () => Promise<void>;
+  signOutLoading: boolean;
+}
+
+const UserAccountMenu: React.FC<UserAccountMenuProps> = ({ email, onSignOut, signOutLoading }) => {
+  const {
+    summary,
+    loading,
+    error,
+    isAuthenticated,
+    authLoading,
+    remainingCredits,
+    remainingDaily,
+    totalRemaining,
+  } = useSubscriptionSummary();
+  const { user } = useAuthToken();
+  const [menuVisible, setMenuVisible] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { accountMenu: accountT } = useTranslation();
+  const router = useRouter();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!containerRef.current) return;
+      if (!containerRef.current.contains(event.target as Node)) {
+        setMenuVisible(false);
+      }
+    };
+
+    if (menuVisible) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
+      }
+    };
+  }, [menuVisible]);
+
+  const initials = useMemo(() => {
+    const displayName = user?.user_metadata?.full_name ?? email;
+    return displayName?.[0]?.toUpperCase() ?? 'U';
+  }, [email, user?.user_metadata?.full_name]);
+
+  // 顶部显示真实剩余积分：今日免费剩余 + 套餐剩余
+  const totalPoints = totalRemaining;
+  const planKey = resolvePlanDisplayKey(summary?.plan_id, summary?.billing_type);
+  const fallbackPlanName =
+    summary?.plan_id && accountT.planNames
+      ? accountT.planNames[summary.plan_id as PlanId] ?? summary.plan_id
+      : accountT.freePlan;
+  const planLabel = accountT.planDisplay?.[planKey] ?? fallbackPlanName;
+  const resetLabel = formatTimeUntilReset(summary?.current_cycle_end ?? null, accountT.reset);
+  const helperText = error ?? accountT.helperText;
+  const stats = [
+    { label: accountT.dailyCreditsLabel, value: `${remainingDaily} ${accountT.pointsUnit}` },
+    { label: accountT.planCreditsLabel, value: `${remainingCredits} ${accountT.pointsUnit}` },
+    { label: accountT.planType, value: planLabel },
+    { label: accountT.planTimeLabel, value: resetLabel },
+  ];
+
+  const handleSignOutClick = () => {
+    setMenuVisible(false);
+    void onSignOut();
+  };
+
+  const openMenu = () => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+    setMenuVisible(true);
+  };
+
+  const closeMenuWithDelay = () => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+    }
+    hideTimerRef.current = setTimeout(() => {
+      setMenuVisible(false);
+    }, 200);
+  };
+
+  const toggleMenu = () => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+    setMenuVisible((prev) => !prev);
+  };
+
   return (
-    <div className="flex items-center gap-2">
-      <span className="hidden text-xs text-muted-foreground sm:inline-block max-w-[140px] truncate">
-        {userEmail}
-      </span>
-      <Button variant="outline" size="sm" onClick={handleSignOut} disabled={loading}>
-        {loading ? '退出中...' : '退出'}
-      </Button>
+    <div ref={containerRef} className="relative" onMouseEnter={openMenu} onMouseLeave={closeMenuWithDelay}>
+      <button
+        type="button"
+        aria-haspopup="true"
+        onClick={toggleMenu}
+        className="flex items-center gap-3 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 shadow-sm transition hover:shadow-md"
+      >
+        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white flex items-center justify-center text-sm font-semibold">
+          {initials}
+        </div>
+        <div className="hidden text-left sm:block">
+          <p className="text-[11px] uppercase tracking-wide text-slate-400">{accountT.triggerLabel}</p>
+          <p className="text-sm font-medium text-slate-900 max-w-[160px] truncate">{email}</p>
+        </div>
+        <Wallet className="h-4 w-4 text-slate-400 sm:hidden" />
+      </button>
+
+      {menuVisible && (
+        <div className="absolute right-0 mt-3 w-80 rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.18)] backdrop-blur">
+        <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 p-4 text-white">
+            <div className="text-xs uppercase tracking-[0.2em] text-white/70">
+              <span>{accountT.currentCredits}</span>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <p className="text-4xl font-semibold">
+                {loading || authLoading ? accountT.loading : totalPoints}
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                className="rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 px-3 py-1.5 text-[11px] font-semibold text-slate-900 shadow-md hover:brightness-110"
+                onClick={() => {
+                  setMenuVisible(false);
+                  router.push('/pricing');
+                }}
+              >
+                升级套餐
+              </Button>
+            </div>
+            <p className="mt-2 text-xs text-white/80">{accountT.helperSecondary}</p>
+          </div>
+
+          <div className="mt-4 space-y-3 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
+            {stats.map((item) => (
+              <div key={item.label} className="flex items-center justify-between">
+                <span className="text-slate-500">{item.label}</span>
+                <span className="font-medium text-slate-900">{item.value}</span>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-3 text-xs text-slate-400">
+            {isAuthenticated ? helperText : accountT.signInPrompt}
+          </p>
+
+          <div className="mt-4 grid gap-2">
+            <Button
+              variant="outline"
+              className="w-full border-transparent bg-slate-800 text-white hover:bg-slate-700"
+              onClick={handleSignOutClick}
+              disabled={signOutLoading}
+            >
+              {signOutLoading ? accountT.signOutLoading : accountT.signOut}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

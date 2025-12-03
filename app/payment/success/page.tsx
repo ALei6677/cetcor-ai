@@ -11,6 +11,7 @@ import {
   SUBSCRIPTION_PLAN_CREDITS,
 } from '@/constants/billing';
 import { useAuthToken } from '@/components/providers/auth-provider';
+import { emitCreditsRefresh } from '@/lib/credits-events';
 
 const PLAN_NAME: Record<PlanId, string> = {
   basic: 'Basic',
@@ -57,7 +58,9 @@ function PaymentSuccessContent() {
       : SUBSCRIPTION_PLAN_CREDITS[planId];
 
   useEffect(() => {
+    // 刷新会话信息，并通知全局“积分可能发生变化”，触发前端实时重新拉取
     refresh();
+    emitCreditsRefresh();
   }, [refresh]);
 
   useEffect(() => {

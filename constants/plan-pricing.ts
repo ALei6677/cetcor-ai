@@ -16,12 +16,12 @@ export const PLAN_PRICING: PlanPricingConfig = {
   basic: {
     monthly: {
       price: 15,
-      credits: 240,
+      credits: 600,
       paypalPlanId: 'P-33W263280A994581YNEPNRYQ',
     },
     yearly: {
       price: 144,
-      credits: 240,
+      credits: 600,
       paypalPlanId: 'P-0FE744777L2833816NEPNSOA',
     },
   },
